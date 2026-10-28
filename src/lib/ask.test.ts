@@ -15,7 +15,7 @@ describe("ask contract", () => {
     expect(settled).toHaveBeenCalledOnce();
   });
 
-  it.each([["LICENCIA de conducir", 2], ["acta de nacimiento", 1], ["tenencia", 1]] as const)(
+  it.each([["LICENCIA de conducir", 2], ["acta de nacimiento", 1], ["tenencia", 1], ["constancia de domicilio", 1]] as const)(
     "returns official-portal placeholder sources for %s", async (question, count) => {
       vi.useFakeTimers();
       const pending = ask(question);

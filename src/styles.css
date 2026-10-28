@@ -75,8 +75,8 @@
   --card-foreground: oklch(0.97 0.005 260);
   --popover: oklch(0.19 0.02 260);
   --popover-foreground: oklch(0.97 0.005 260);
-  --primary: oklch(0.62 0.19 256);
-  --primary-foreground: oklch(0.99 0 0);
+  --primary: oklch(0.99 0 0);
+  --primary-foreground: oklch(0.15 0.01 260);
   --secondary: oklch(0.24 0.02 260);
   --secondary-foreground: oklch(0.97 0.005 260);
   --muted: oklch(0.24 0.02 260);
@@ -85,12 +85,11 @@
   --accent-foreground: oklch(0.97 0.005 260);
   --destructive: oklch(0.65 0.2 25);
   --destructive-foreground: oklch(0.99 0 0);
-  --border: oklch(1 0 0 / 12%);
-  --input: oklch(1 0 0 / 12%);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 10%);
   --input-bg: oklch(0.14 0.018 260);
   --overlay: oklch(0.12 0.02 260 / 35%);
-  --ring: oklch(0.62 0.19 256);
-  --glow: 0 0 0 1px oklch(0.62 0.19 256 / 25%), 0 10px 50px -8px oklch(0.62 0.19 256 / 45%);
+  --ring: oklch(1 0 0 / 30%);
   --warning-border: oklch(0.78 0.14 80 / 35%);
   --warning-bg: oklch(0.78 0.14 80 / 5%);
 }
@@ -107,14 +106,6 @@
   }
 }
 
-@utility ask-glow {
-  box-shadow: var(--glow);
-}
-
-.hero-frame {
-  border: 1px solid var(--border);
-  box-shadow: 0 0 40px -8px oklch(0.62 0.19 256 / 35%);
-}
 
 .loading-dot { animation: loading-pulse 1.2s ease-in-out infinite; }
 .loading-dot-1 { animation-delay: 150ms; }

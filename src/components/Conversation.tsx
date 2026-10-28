@@ -39,7 +39,7 @@ export function Conversation({ turns, pending, onSubmit }: {
                   <p className="mb-2 mt-5 text-xs text-muted-foreground">Fuentes</p>
                   <div className="flex flex-wrap gap-2">
                     {turn.response.sources.map((source, i) => (
-                      <a key={`${source.url}-${i}`} href={source.url} target="_blank" rel="noopener noreferrer" className="inline-flex max-w-full items-center gap-2 rounded-lg border border-border px-3 py-2 transition-colors hover:bg-card focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
+                      <a key={`${source.url}-${i}`} href={source.url} target="_blank" rel="noopener noreferrer" className="inline-flex max-w-full items-center gap-2 rounded-lg border border-border px-3 py-2 transition-colors hover:border-white/30 hover:bg-card focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
                         <LinkIcon size={15} className="shrink-0 text-muted-foreground" />
                         <span className="min-w-0 text-sm">
                           <span className="block break-words text-foreground">{source.titulo}</span>

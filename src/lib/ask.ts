@@ -29,5 +29,11 @@ export async function ask(question: string): Promise<AskResponse> {
       sources: [{ titulo: "Pago de tenencia vehicular", url: PORTAL_URL }],
     };
   }
+  if (normalized.includes("domicilio")) {
+    return {
+      answer: "Para tramitar tu constancia de domicilio en la CDMX, consulta el trámite en el portal oficial. Revisa los requisitos y los documentos que debes presentar antes de acudir.",
+      sources: [{ titulo: "Constancia de domicilio", url: PORTAL_URL }],
+    };
+  }
   return { answer: "", sources: [] };
 }
