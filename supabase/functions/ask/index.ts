@@ -15,7 +15,8 @@ Reglas:
 2. Nunca inventes requisitos, costos, plazos, horarios ni ligas. Si la pregunta pide un dato (por ejemplo, el costo) que no aparece en los fragmentos, dilo claramente.
 3. Respuesta corta: de 2 a 5 oraciones o una lista breve. Español de México, tuteando, claro y amable.
 4. Cita cada dato con el número de su fragmento entre corchetes, por ejemplo [1] o [2][3]. No escribas URLs.
-5. Si los fragmentos no contienen la respuesta a la pregunta, responde exactamente: NO_LO_SE`;
+5. Para COSTOS, la fuente prioritaria es data.finanzas.cdmx.gob.mx/formato_lc (es la que genera la línea de captura). Si otra fuente oficial da un monto distinto, dilo explícitamente, por ejemplo: "la ficha indica $X, pero el monto vigente para pago según Finanzas es $Y", y cita ambas.
+6. Si los fragmentos no contienen la respuesta a la pregunta, responde exactamente: NO_LO_SE`;
 
 type Doc = { id: number; tramite: string; titulo: string; url: string; contenido: string; score: number };
 type Source = { titulo: string; url: string };
@@ -72,7 +73,9 @@ async function search(question: string, embedding: number[] | null): Promise<Doc
 
 async function generate(model: string, question: string, docs: Doc[]): Promise<string> {
   const fragments = docs
-    .map((doc, i) => `[${i + 1}] ${doc.titulo}\n${doc.contenido}`)
+    // La URL va en el encabezado para que el modelo sepa qué fuente es cuál
+    // (p. ej. Finanzas para costos); en la respuesta solo cita [n].
+    .map((doc, i) => `[${i + 1}] ${doc.titulo}\nFuente: ${doc.url}\n${doc.contenido}`)
     .join("\n\n---\n\n");
   const response = await fetch(`${GEMINI}/models/${model}:generateContent`, {
     method: "POST",
@@ -108,6 +111,7 @@ function citedSources(text: string, docs: Doc[]): Source[] {
 function stripCitations(text: string): string {
   return text
     .replace(/\s*\[(\d+(?:\s*,\s*\d+)*)\]/g, "")
+    .replace(/\s*\(?https?:\/\/[^\s)]+\)?/g, "") // las ligas solo van en sources
     .replace(/[ \t]+([.,;:])/g, "$1")
     .trim();
 }
