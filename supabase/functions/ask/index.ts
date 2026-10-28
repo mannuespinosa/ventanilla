@@ -8,6 +8,21 @@ const EMBED_MODEL = "gemini-embedding-2";
 const MODELS = ["gemma-4-26b-a4b-it", "gemma-4-31b-it"];
 const MAX_QUESTION = 500;
 const NO_ANSWER = "No encontré esto en las fuentes oficiales que tengo.";
+// Reescritura de seguimientos ("¿dónde puedo pagar?") con contexto de la conversación.
+const REWRITE_MODEL = "gemma-4-26b-a4b-it";
+const MAX_HISTORY = 3;
+const MAX_HISTORY_ANSWER = 1500;
+
+const REWRITE_PROMPT = `Tu única tarea es reescribir la ÚLTIMA pregunta del usuario para que se entienda sola, sin leer la conversación.
+- Sustituye pronombres y referencias vagas ("eso", "ahí", "dónde puedo pagar", "y cuánto cuesta") por el trámite concreto del que se viene hablando.
+- Si la última pregunta cambia de tema o ya se entiende sola, devuélvela igual.
+- Español, una sola línea, en forma de pregunta. No la respondas ni agregues nada más.
+
+Ejemplo:
+Usuario: ¿Cómo renuevo mi licencia tipo A?
+Ventanilla: Puedes renovarla en línea con Llave CDMX.
+Última pregunta: ¿y cuánto cuesta?
+Reescrita: ¿Cuánto cuesta renovar la licencia de conducir tipo A en la CDMX?`;
 
 const SYSTEM_PROMPT = `Eres Ventanilla, un asistente de trámites de la Ciudad de México.
 
@@ -29,12 +44,13 @@ type Doc = {
   score: number;
 };
 type Source = { titulo: string; url: string };
+type Turn = { question: string; answer: string };
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Expose-Headers": "x-ventanilla-model",
+  "Access-Control-Expose-Headers": "x-ventanilla-model, x-ventanilla-query",
 };
 
 function json(body: unknown, status = 200, extra: Record<string, string> = {}) {
@@ -115,6 +131,72 @@ async function generate(model: string, question: string, docs: Doc[]): Promise<s
   return text;
 }
 
+// Las últimas MAX_HISTORY interacciones válidas que manda la UI; lo demás se ignora.
+function parseHistory(value: unknown): Turn[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .filter(
+      (turn): turn is Turn =>
+        typeof turn?.question === "string" && typeof turn?.answer === "string",
+    )
+    .slice(-MAX_HISTORY)
+    .map((turn) => ({
+      question: turn.question.trim().slice(0, MAX_QUESTION),
+      answer: turn.answer.trim().slice(0, MAX_HISTORY_ANSWER),
+    }));
+}
+
+// Convierte un seguimiento en una pregunta independiente para la búsqueda.
+// Sin razonamiento (thinkingLevel minimal) tarda ~1 s. Si falla, se usa la original.
+async function rewriteQuestion(question: string, history: Turn[]): Promise<string> {
+  const conversation = history
+    .map((turn) => `Usuario: ${turn.question}\nVentanilla: ${turn.answer}`)
+    .join("\n");
+  try {
+    const response = await fetch(`${GEMINI}/models/${REWRITE_MODEL}:generateContent`, {
+      method: "POST",
+      headers: { "x-goog-api-key": env("GEMINI_API_KEY"), "Content-Type": "application/json" },
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: REWRITE_PROMPT }] },
+        contents: [
+          {
+            role: "user",
+            parts: [
+              {
+                text: `Conversación:\n${conversation}\n\nÚltima pregunta: ${question}\nReescrita:`,
+              },
+            ],
+          },
+        ],
+        generationConfig: {
+          temperature: 0,
+          maxOutputTokens: 256,
+          thinkingConfig: { thinkingLevel: "minimal" },
+        },
+      }),
+    });
+    if (!response.ok) throw new Error(`${response.status} ${await response.text()}`);
+    const data = await response.json();
+    const parts: { text?: string; thought?: boolean }[] =
+      data.candidates?.[0]?.content?.parts ?? [];
+    const line = parts
+      .filter((part) => !part.thought && part.text)
+      .map((part) => part.text)
+      .join("")
+      .split("\n")
+      .map((l) => l.trim())
+      .find(Boolean)
+      ?.replace(/^thought\s*/i, "")
+      .replace(/^reescrita:\s*/i, "")
+      .replace(/^["“«]|["”»]$/g, "")
+      .trim();
+    return line ? line.slice(0, MAX_QUESTION) : question;
+  } catch (error) {
+    console.error("reescritura falló:", error);
+    return question;
+  }
+}
+
 // Convierte las citas [n] / [n, m] en fuentes, solo de los fragmentos citados,
 // sin URLs repetidas y en orden de aparición.
 function citedSources(text: string, docs: Doc[]): Source[] {
@@ -143,7 +225,7 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return json({ error: "Usa POST" }, 405);
 
-  let body: { question?: unknown; model?: unknown };
+  let body: { question?: unknown; model?: unknown; history?: unknown };
   try {
     body = await req.json();
   } catch {
@@ -162,14 +244,19 @@ Deno.serve(async (req) => {
   const models = [primary, ...MODELS.filter((m) => m !== primary)];
 
   try {
-    const docs = await search(question, await embedQuestion(question));
-    if (docs.length === 0) return json({ answer: NO_ANSWER, sources: [] });
+    const history = parseHistory(body.history);
+    const query = history.length > 0 ? await rewriteQuestion(question, history) : question;
+    // Codificada porque un header no admite cualquier carácter Unicode.
+    const queryHeader = { "x-ventanilla-query": encodeURIComponent(query) };
+
+    const docs = await search(query, await embedQuestion(query));
+    if (docs.length === 0) return json({ answer: NO_ANSWER, sources: [] }, 200, queryHeader);
 
     let text = "";
     let used = "";
     for (const model of models) {
       try {
-        text = await generate(model, question, docs);
+        text = await generate(model, query, docs);
         used = model;
         break;
       } catch (error) {
@@ -178,7 +265,7 @@ Deno.serve(async (req) => {
     }
     if (!used) return json({ error: "El modelo no respondió. Intenta de nuevo." }, 502);
 
-    const headers = { "x-ventanilla-model": used };
+    const headers = { ...queryHeader, "x-ventanilla-model": used };
     const sources = text.includes("NO_LO_SE") ? [] : citedSources(text, docs);
     if (sources.length === 0) return json({ answer: NO_ANSWER, sources: [] }, 200, headers);
     return json({ answer: stripCitations(text), sources }, 200, headers);
