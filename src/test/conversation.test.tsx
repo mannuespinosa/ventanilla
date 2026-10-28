@@ -21,8 +21,11 @@ function deferred() {
 
 function send(question: string) {
   const input = screen.getAllByLabelText("Escribe tu pregunta")[0];
+  if (!input) throw new Error("Question input missing");
   fireEvent.change(input, { target: { value: question } });
-  fireEvent.submit(input.closest("form") as HTMLFormElement);
+  const form = input.closest("form");
+  if (!form) throw new Error("Question form missing");
+  fireEvent.submit(form);
 }
 
 describe("conversation rules", () => {
@@ -60,6 +63,7 @@ describe("conversation rules", () => {
     vi.mocked(ask).mockReturnValue(new Promise(() => {}));
     render(<Index />);
     const input = screen.getAllByLabelText("Escribe tu pregunta")[0];
+    if (!input) throw new Error("Question input missing");
     fireEvent.change(input, { target: { value: "tenencia" } });
     fireEvent.keyDown(input, { key: "Enter", shiftKey: true });
     expect(ask).not.toHaveBeenCalled();
