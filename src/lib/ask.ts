@@ -1,6 +1,9 @@
 export type Source = { titulo: string; url: string };
 // `model` es el modelo que respondió (header x-ventanilla-model), si hubo uno.
 export type AskResponse = { answer: string; sources: Source[]; model?: string };
+// Interacciones previas para que `ask` entienda seguimientos como "¿dónde puedo pagar?".
+export type HistoryTurn = { question: string; answer: string };
+export const MAX_HISTORY = 3;
 
 // La URL de la función no es secreta; VITE_ASK_URL permite apuntar a otra.
 export const ASK_URL: string =
@@ -12,11 +15,12 @@ function isSource(value: unknown): value is Source {
   return typeof titulo === "string" && typeof url === "string" && /^https?:\/\//.test(url);
 }
 
-export async function ask(question: string): Promise<AskResponse> {
+export async function ask(question: string, history: HistoryTurn[] = []): Promise<AskResponse> {
+  const recent = history.filter((turn) => turn.answer).slice(-MAX_HISTORY);
   const response = await fetch(ASK_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ question }),
+    body: JSON.stringify({ question, ...(recent.length ? { history: recent } : {}) }),
   });
   if (!response.ok) throw new Error(`ask respondió ${response.status}`);
 

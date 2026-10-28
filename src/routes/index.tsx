@@ -38,9 +38,13 @@ export function Index() {
     busyRef.current = true;
     const id = ++requestRef.current;
     setPending(true);
+    // Turnos ya respondidos antes de esta pregunta; ask.ts se queda con los últimos.
+    const history = turns.flatMap((turn) =>
+      turn.response ? [{ question: turn.question, answer: turn.response.answer }] : [],
+    );
     setTurns((current) => [...current, { id, question: trimmed }]);
     try {
-      const response = await ask(trimmed);
+      const response = await ask(trimmed, history);
       if (requestRef.current !== id) return;
       setTurns((current) => current.map((turn) => turn.id === id ? { ...turn, response } : turn));
     } catch {

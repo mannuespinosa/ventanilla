@@ -115,6 +115,25 @@ describe("conversation rules", () => {
     fireEvent.keyDown(input, { key: "Enter", shiftKey: true });
     expect(ask).not.toHaveBeenCalled();
     fireEvent.keyDown(input, { key: "Enter" });
-    expect(ask).toHaveBeenCalledWith("tenencia");
+    expect(ask).toHaveBeenCalledWith("tenencia", []);
+  });
+
+  it("sends previous answered turns as history for follow-up questions", async () => {
+    const first = deferred();
+    vi.mocked(ask)
+      .mockReturnValueOnce(first.promise)
+      .mockReturnValueOnce(new Promise(() => {}));
+    render(<Index />);
+    send("¿Qué necesito para sacar mi acta de nacimiento?");
+    await act(async () =>
+      first.resolve({
+        answer: "Cuesta $98.00.",
+        sources: [{ titulo: "Actas", url: "https://actas.cdmx.gob.mx" }],
+      }),
+    );
+    send("¿dónde puedo pagar?");
+    expect(ask).toHaveBeenLastCalledWith("¿dónde puedo pagar?", [
+      { question: "¿Qué necesito para sacar mi acta de nacimiento?", answer: "Cuesta $98.00." },
+    ]);
   });
 });

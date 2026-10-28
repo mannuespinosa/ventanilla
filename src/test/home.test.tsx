@@ -45,7 +45,7 @@ describe("home behavior", () => {
     if (!fixed) throw new Error("Missing fixed input");
     fireEvent.change(fixed, { target: { value: "tenencia" } });
     fireEvent.keyDown(fixed, { key: "Enter" });
-    expect(ask).toHaveBeenCalledWith("tenencia");
+    expect(ask).toHaveBeenCalledWith("tenencia", []);
     expect(screen.getByRole("log")).toBeInTheDocument();
     expect(screen.queryByRole("region", { name: "Manifiesto" })).toBeNull();
     expect(screen.queryByTestId("home-fixed-input")).toBeNull();

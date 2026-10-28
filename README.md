@@ -11,9 +11,12 @@ Proyecto para Hacktoberfest México. Licencia [AGPL-3.0](LICENSE).
 
 ```
 UI (TanStack Start, src/lib/ask.ts)
-  │  POST {question}
+  │  POST {question, history: últimas 3 interacciones}
   ▼
 Edge function `ask` (supabase/functions/ask)
+  ├─ si hay historial: Gemma 4 26b reescribe la pregunta como independiente
+  │     ("¿dónde puedo pagar?" → "¿Dónde pago la copia del acta de nacimiento?");
+  │     va en el header x-ventanilla-query (URL-encoded) para depurar
   ├─ embedding de la pregunta (gemini-embedding-2, 768 dims)
   ├─ buscar_docs(): búsqueda híbrida en Postgres
   │     pgvector (coseno) + full-text en español, fusionados con RRF

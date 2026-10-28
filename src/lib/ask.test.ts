@@ -33,6 +33,27 @@ describe("ask contract", () => {
     expect(await ask("licencia")).toEqual({ answer: "Cuesta $1,142.00.", sources });
   });
 
+  it("sends only the last 3 answered turns as history", async () => {
+    const fetchMock = mockFetch(200, { answer: "Respuesta", sources: [] });
+    const history = [
+      { question: "q1", answer: "a1" },
+      { question: "q2", answer: "a2" },
+      { question: "fallida", answer: "" },
+      { question: "q3", answer: "a3" },
+      { question: "q4", answer: "a4" },
+    ];
+    await ask("¿dónde puedo pagar?", history);
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(JSON.parse(init.body as string)).toEqual({
+      question: "¿dónde puedo pagar?",
+      history: [
+        { question: "q2", answer: "a2" },
+        { question: "q3", answer: "a3" },
+        { question: "q4", answer: "a4" },
+      ],
+    });
+  });
+
   it("reports which model answered from the x-ventanilla-model header", async () => {
     mockFetch(200, { answer: "Hola", sources: [] }, { "x-ventanilla-model": "gemma-4-26b-a4b-it" });
     expect((await ask("hola")).model).toBe("gemma-4-26b-a4b-it");
