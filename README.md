@@ -71,7 +71,11 @@ oficiales puede tener la suya.
    "Hola, {nombre}"; `subtitulo` y `ejemplos` (las preguntas que rotan en el
    buscador) son textos de la portada; `repo` es tu fork;
    `dominios_permitidos` limita las fuentes, por ejemplo `["jalisco.gob.mx"]`
-   (se aceptan sus subdominios).
+   (se aceptan sus subdominios). En `voz` (en construcción) van el `voice_id` de ElevenLabs,
+   un `voice_id_respaldo` y la `descripcion_voz` con la que se diseñó en
+   Voice Design, para que puedas recrear una voz equivalente para tu ciudad.
+   Los IDs de voz no son secretos; el único secreto de voz es
+   `ELEVENLABS_API_KEY` y va en `.env`.
 2. **Define tus trámites y descubre fuentes.** Cambia `TRAMITES` en
    `scripts/ingest.py` por los de tu ciudad, corre
    `uv run scripts/ingest.py --discover` y revisa a mano el archivo de

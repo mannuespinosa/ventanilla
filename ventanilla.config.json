@@ -9,5 +9,10 @@
   ],
   "dominios_permitidos": ["cdmx.gob.mx"],
   "fuentes": "scripts/urls.json",
-  "repo": "https://github.com/mannuespinosa/ventanilla"
+  "repo": "https://github.com/mannuespinosa/ventanilla",
+  "voz": {
+    "voice_id": "ezZ7i8g93r9WGEQx6Gjl",
+    "voice_id_respaldo": "WcatwTHxqZ7CaKei5wyl",
+    "descripcion_voz": "Mujer mexicana de unos 35 años, de la Ciudad de México. Voz clara, cálida y pausada, con acento chilango neutro y natural. Tono de servidora pública amable y confiable, sin exagerar. Grabación limpia de estudio."
+  }
 }
