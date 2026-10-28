@@ -116,8 +116,16 @@ def scrape(client: httpx.Client, url: str) -> dict | None:
     response = client.post(
         f"{FIRECRAWL}/scrape",
         headers={"Authorization": f"Bearer {env('FIRECRAWL_API_KEY')}"},
-        json={"url": url, "formats": ["markdown"], "onlyMainContent": True, "timeout": 90000},
-        timeout=120,
+        # Los portales JSF de la CDMX tardan en responder y renderizar.
+        json={
+            "url": url,
+            "formats": ["markdown"],
+            "onlyMainContent": True,
+            "waitFor": 5000,
+            "timeout": 180000,
+            "location": {"country": "MX", "languages": ["es-MX"]},
+        },
+        timeout=200,
     )
     if response.status_code != 200:
         print(f"   ✗ scrape {response.status_code}: {url}")
