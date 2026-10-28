@@ -2,34 +2,20 @@ import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 
 import { ArrowUp, Mic, Paperclip } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-const PROMPTS = [
-  "Prueba: ¿cómo renuevo mi licencia de conducir?",
-  "Prueba: ¿qué necesito para sacar el acta de nacimiento?",
-  "Prueba: ¿cómo pago la tenencia?",
-  "Prueba: ¿dónde tramito mi constancia de domicilio?",
-];
-
-export function AskInput({ onSubmit, disabled = false, tall = false }: {
+export function AskInput({ onSubmit, disabled = false, tall = false, suggestion, onActivityChange }: {
   onSubmit: (question: string) => void;
   disabled?: boolean;
   tall?: boolean;
+  suggestion?: string;
+  onActivityChange?: (active: boolean) => void;
 }) {
   const [value, setValue] = useState("");
-  const [idx, setIdx] = useState(0);
-  const [visible, setVisible] = useState(true);
+  const [focused, setFocused] = useState(false);
   const taRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
-    let timeout: ReturnType<typeof setTimeout> | undefined;
-    const id = setInterval(() => {
-      setVisible(false);
-      timeout = setTimeout(() => {
-        setIdx((i) => (i + 1) % PROMPTS.length);
-        setVisible(true);
-      }, 300);
-    }, 3000);
-    return () => { clearInterval(id); clearTimeout(timeout); };
-  }, []);
+    onActivityChange?.(focused || value.length > 0);
+  }, [focused, value, onActivityChange]);
 
   useEffect(() => {
     const el = taRef.current;
@@ -39,22 +25,29 @@ export function AskInput({ onSubmit, disabled = false, tall = false }: {
   }, [value]);
 
   const trimmed = value.trim();
+  const placeholder = suggestion ? `Prueba: ${suggestion}` : "Escribe tu pregunta...";
+  const canSend = Boolean(trimmed || suggestion) && !disabled;
+
   const submit = (e: FormEvent) => {
     e.preventDefault();
     sendNow();
   };
   const sendNow = () => {
-    if (!trimmed || disabled) return;
-    onSubmit(trimmed);
+    const text = trimmed || suggestion?.trim() || "";
+    if (!text || disabled) return;
+    onSubmit(text);
     setValue("");
   };
+
+  const sendClass = "flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-neutral-900 transition hover:bg-white/90 disabled:bg-white/15 disabled:text-neutral-400";
+  const iconClass = "shrink-0 rounded-full p-2 text-muted-foreground hover:text-foreground";
 
   return (
     <>
       {/* Móvil (<640px): rectángulo de dos renglones */}
       <form
         onSubmit={submit}
-        className="ask-glow flex w-full flex-col gap-1 rounded-[24px] border border-border bg-input-bg p-2.5 sm:hidden"
+        className="flex w-full flex-col gap-1 rounded-[24px] border border-border bg-input-bg p-2.5 focus-within:ring-1 focus-within:ring-white/30 sm:hidden"
       >
         <div className="relative min-w-0 px-1">
           <label htmlFor="ask-mobile" className="sr-only">Escribe tu pregunta</label>
@@ -65,6 +58,8 @@ export function AskInput({ onSubmit, disabled = false, tall = false }: {
             disabled={disabled}
             value={value}
             onChange={(e) => setValue(e.target.value)}
+            onFocus={() => setFocused(true)}
+            onBlur={() => setFocused(false)}
             onKeyDown={(e: KeyboardEvent<HTMLTextAreaElement>) => {
               if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
                 e.preventDefault();
@@ -77,24 +72,24 @@ export function AskInput({ onSubmit, disabled = false, tall = false }: {
           {!value && (
             <span
               aria-hidden
-              className={`pointer-events-none absolute inset-x-1 top-1 text-base leading-6 text-muted-foreground transition-opacity duration-300 ${visible ? "opacity-100" : "opacity-0"}`}
+              className="pointer-events-none absolute inset-x-1 top-1 text-base leading-6 text-muted-foreground"
             >
-              {PROMPTS[idx]}
+              {placeholder}
             </span>
           )}
         </div>
         <div className="flex shrink-0 items-center justify-end gap-1">
-          <Button variant="ghost" size="icon" disabled={disabled} type="button" aria-label="Adjuntar archivo" className="shrink-0 rounded-full p-2 text-muted-foreground hover:text-foreground">
+          <Button variant="ghost" size="icon" disabled={disabled} type="button" aria-label="Adjuntar archivo" className={iconClass}>
             <Paperclip size={18} />
           </Button>
-          <Button variant="ghost" size="icon" disabled={disabled} type="button" aria-label="Usar micrófono" className="shrink-0 rounded-full p-2 text-muted-foreground hover:text-foreground">
+          <Button variant="ghost" size="icon" disabled={disabled} type="button" aria-label="Usar micrófono" className={iconClass}>
             <Mic size={18} />
           </Button>
           <Button
             type="submit"
             aria-label="Enviar pregunta"
-            disabled={!trimmed || disabled}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground transition hover:brightness-110 disabled:opacity-40"
+            disabled={!canSend}
+            className={sendClass}
           >
             <ArrowUp size={18} />
           </Button>
@@ -104,7 +99,7 @@ export function AskInput({ onSubmit, disabled = false, tall = false }: {
       {/* Desktop (≥640px): píldora de un renglón */}
       <form
         onSubmit={submit}
-        className={`ask-glow relative mx-auto hidden w-full max-w-[640px] items-center gap-1 rounded-full border border-border bg-input-bg py-2 pl-5 pr-2 sm:flex ${tall ? "lg:hidden" : ""}`}
+        className={`relative mx-auto hidden w-full max-w-[640px] items-center gap-1 rounded-full border border-border bg-input-bg py-2 pl-5 pr-2 focus-within:ring-1 focus-within:ring-white/30 sm:flex ${tall ? "lg:hidden" : ""}`}
       >
         <div className="relative min-w-0 flex-1">
           <label htmlFor="ask" className="sr-only">Escribe tu pregunta</label>
@@ -113,29 +108,31 @@ export function AskInput({ onSubmit, disabled = false, tall = false }: {
             disabled={disabled}
             value={value}
             onChange={(e) => setValue(e.target.value)}
+            onFocus={() => setFocused(true)}
+            onBlur={() => setFocused(false)}
             className="w-full bg-transparent py-2 text-base text-foreground outline-none"
             autoComplete="off"
           />
           {!value && (
             <span
               aria-hidden
-              className={`pointer-events-none absolute inset-y-0 left-0 right-0 flex items-center truncate text-muted-foreground transition-opacity duration-300 ${visible ? "opacity-100" : "opacity-0"}`}
+              className="pointer-events-none absolute inset-y-0 left-0 right-0 flex items-center truncate text-muted-foreground"
             >
-              {PROMPTS[idx]}
+              {placeholder}
             </span>
           )}
         </div>
-        <Button variant="ghost" size="icon" disabled={disabled} type="button" aria-label="Adjuntar archivo" className="shrink-0 rounded-full p-2 text-muted-foreground hover:text-foreground">
+        <Button variant="ghost" size="icon" disabled={disabled} type="button" aria-label="Adjuntar archivo" className={iconClass}>
           <Paperclip size={18} />
         </Button>
-        <Button variant="ghost" size="icon" disabled={disabled} type="button" aria-label="Usar micrófono" className="shrink-0 rounded-full p-2 text-muted-foreground hover:text-foreground">
+        <Button variant="ghost" size="icon" disabled={disabled} type="button" aria-label="Usar micrófono" className={iconClass}>
           <Mic size={18} />
         </Button>
         <Button
           type="submit"
           aria-label="Enviar pregunta"
-          disabled={!trimmed || disabled}
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground transition hover:brightness-110 disabled:opacity-40"
+          disabled={!canSend}
+          className={sendClass}
         >
           <ArrowUp size={18} />
         </Button>
@@ -145,7 +142,7 @@ export function AskInput({ onSubmit, disabled = false, tall = false }: {
       {tall && (
         <form
           onSubmit={submit}
-          className="ask-glow relative mx-auto hidden w-full min-h-[88px] items-center gap-2 rounded-full border border-border bg-input-bg py-3 pl-6 pr-3 lg:flex"
+          className="relative mx-auto hidden w-full min-h-[88px] items-center gap-2 rounded-full border border-border bg-input-bg py-3 pl-6 pr-3 focus-within:ring-1 focus-within:ring-white/30 lg:flex"
         >
           <div className="relative min-w-0 flex-1">
             <label htmlFor="ask-wide" className="sr-only">Escribe tu pregunta</label>
@@ -154,15 +151,17 @@ export function AskInput({ onSubmit, disabled = false, tall = false }: {
               disabled={disabled}
               value={value}
               onChange={(e) => setValue(e.target.value)}
+              onFocus={() => setFocused(true)}
+              onBlur={() => setFocused(false)}
               className="w-full bg-transparent py-2 text-xl text-foreground outline-none"
               autoComplete="off"
             />
             {!value && (
               <span
                 aria-hidden
-                className={`pointer-events-none absolute inset-y-0 left-0 right-0 flex items-center truncate text-xl text-muted-foreground transition-opacity duration-300 ${visible ? "opacity-100" : "opacity-0"}`}
+                className="pointer-events-none absolute inset-y-0 left-0 right-0 flex items-center truncate text-xl text-muted-foreground"
               >
-                {PROMPTS[idx]}
+                {placeholder}
               </span>
             )}
           </div>
@@ -175,8 +174,8 @@ export function AskInput({ onSubmit, disabled = false, tall = false }: {
           <Button
             type="submit"
             aria-label="Enviar pregunta"
-            disabled={!trimmed || disabled}
-            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground transition hover:brightness-110 disabled:opacity-40"
+            disabled={!canSend}
+            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white text-neutral-900 transition hover:bg-white/90 disabled:bg-white/15 disabled:text-neutral-400"
           >
             <ArrowUp size={22} />
           </Button>
