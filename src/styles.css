@@ -117,3 +117,24 @@
 @media (prefers-reduced-motion: reduce) {
   .loading-dot { animation: none; }
 }
+
+.manifesto-icon {
+  display: inline-block;
+  width: 0.52em;
+  height: 0.52em;
+  vertical-align: 0.04em;
+  stroke-width: 1.5;
+  color: var(--muted-foreground);
+}
+[data-reveal] { transition: opacity 650ms ease, transform 650ms ease; }
+[data-revealed="false"] { opacity: 0; transform: translateY(18px); }
+[data-revealed="true"] { opacity: 1; transform: translateY(0); }
+.marquee-window { overflow: hidden; }
+.procedure-track { display: flex; width: max-content; animation: procedure-marquee 42s linear infinite; }
+.procedure-track-reverse { animation-direction: reverse; animation-duration: 48s; }
+.procedure-group { display: flex; gap: 12px; padding-right: 12px; }
+@keyframes procedure-marquee { to { transform: translateX(-50%); } }
+@media (prefers-reduced-motion: reduce) {
+  [data-reveal] { opacity: 1; transform: none; transition: none; }
+  .procedure-track { animation: none; }
+}

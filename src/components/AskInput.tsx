@@ -1,15 +1,20 @@
-import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
+import { useEffect, useId, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
 import { ArrowUp, Mic, Paperclip } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-export function AskInput({ onSubmit, disabled = false, tall = false, suggestion, onActivityChange }: {
+export function AskInput({ onSubmit, disabled = false, tall = false, suggestion, onActivityChange, value: controlledValue, onValueChange }: {
   onSubmit: (question: string) => void;
   disabled?: boolean;
   tall?: boolean;
   suggestion?: string | undefined;
   onActivityChange?: (active: boolean) => void;
+  value?: string;
+  onValueChange?: (value: string) => void;
 }) {
-  const [value, setValue] = useState("");
+  const [localValue, setLocalValue] = useState("");
+  const value = controlledValue ?? localValue;
+  const setValue = onValueChange ?? setLocalValue;
+  const inputId = useId();
   const [focused, setFocused] = useState(false);
   const taRef = useRef<HTMLTextAreaElement>(null);
 
@@ -39,7 +44,7 @@ export function AskInput({ onSubmit, disabled = false, tall = false, suggestion,
     setValue("");
   };
 
-  const sendClass = "flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-neutral-900 transition hover:bg-white/90 disabled:bg-white/15 disabled:text-neutral-400";
+  const sendClass = "flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground transition hover:bg-primary/90 disabled:bg-primary/15 disabled:text-muted-foreground";
   const iconClass = "shrink-0 rounded-full p-2 text-muted-foreground hover:text-foreground";
 
   return (
@@ -47,12 +52,12 @@ export function AskInput({ onSubmit, disabled = false, tall = false, suggestion,
       {/* Móvil (<640px): rectángulo de dos renglones */}
       <form
         onSubmit={submit}
-        className="flex w-full flex-col gap-1 rounded-[24px] border border-border bg-input-bg p-2.5 focus-within:ring-1 focus-within:ring-white/30 sm:hidden"
+        className="flex w-full flex-col gap-1 rounded-[24px] border border-border bg-input-bg p-2.5 focus-within:ring-1 focus-within:ring-ring sm:hidden"
       >
         <div className="relative min-w-0 px-1">
-          <label htmlFor="ask-mobile" className="sr-only">Escribe tu pregunta</label>
+          <label htmlFor={`${inputId}-mobile`} className="sr-only">Escribe tu pregunta</label>
           <textarea
-            id="ask-mobile"
+            id={`${inputId}-mobile`}
             ref={taRef}
             rows={1}
             disabled={disabled}
@@ -99,12 +104,12 @@ export function AskInput({ onSubmit, disabled = false, tall = false, suggestion,
       {/* Desktop (≥640px): píldora de un renglón */}
       <form
         onSubmit={submit}
-        className={`relative mx-auto hidden w-full max-w-[640px] items-center gap-1 rounded-full border border-border bg-input-bg py-2 pl-5 pr-2 focus-within:ring-1 focus-within:ring-white/30 sm:flex ${tall ? "lg:hidden" : ""}`}
+        className={`relative mx-auto hidden w-full max-w-[640px] items-center gap-1 rounded-full border border-border bg-input-bg py-2 pl-5 pr-2 focus-within:ring-1 focus-within:ring-ring sm:flex ${tall ? "lg:hidden" : ""}`}
       >
         <div className="relative min-w-0 flex-1">
-          <label htmlFor="ask" className="sr-only">Escribe tu pregunta</label>
+          <label htmlFor={`${inputId}-standard`} className="sr-only">Escribe tu pregunta</label>
           <input
-            id="ask"
+            id={`${inputId}-standard`}
             disabled={disabled}
             value={value}
             onChange={(e) => setValue(e.target.value)}
@@ -142,12 +147,12 @@ export function AskInput({ onSubmit, disabled = false, tall = false, suggestion,
       {tall && (
         <form
           onSubmit={submit}
-          className="relative mx-auto hidden w-full min-h-[88px] items-center gap-2 rounded-full border border-border bg-input-bg py-3 pl-6 pr-3 focus-within:ring-1 focus-within:ring-white/30 lg:flex"
+          className="relative mx-auto hidden w-full min-h-[88px] items-center gap-2 rounded-full border border-border bg-input-bg py-3 pl-6 pr-3 focus-within:ring-1 focus-within:ring-ring lg:flex"
         >
           <div className="relative min-w-0 flex-1">
-            <label htmlFor="ask-wide" className="sr-only">Escribe tu pregunta</label>
+            <label htmlFor={`${inputId}-wide`} className="sr-only">Escribe tu pregunta</label>
             <input
-              id="ask-wide"
+              id={`${inputId}-wide`}
               disabled={disabled}
               value={value}
               onChange={(e) => setValue(e.target.value)}
@@ -175,7 +180,7 @@ export function AskInput({ onSubmit, disabled = false, tall = false, suggestion,
             type="submit"
             aria-label="Enviar pregunta"
             disabled={!canSend}
-            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white text-neutral-900 transition hover:bg-white/90 disabled:bg-white/15 disabled:text-neutral-400"
+            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground transition hover:bg-primary/90 disabled:bg-primary/15 disabled:text-muted-foreground"
           >
             <ArrowUp size={22} />
           </Button>

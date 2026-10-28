@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { SiteHeader } from "@/components/SiteHeader";
-import { Hero } from "@/components/Hero";
+import { Home } from "@/components/Home";
 import { useRef, useState } from "react";
 import { Conversation, type ConversationTurn } from "@/components/Conversation";
 import { ask } from "@/lib/ask";
@@ -57,7 +57,7 @@ export function Index() {
   return (
     <main className={turns.length ? "flex h-dvh flex-col overflow-hidden bg-background" : "min-h-screen bg-background"}>
       <div className="shrink-0"><SiteHeader onHome={reset} /></div>
-      {turns.length ? <Conversation turns={turns} pending={pending} onSubmit={submit} /> : <Hero onSubmit={submit} />}
+      {turns.length ? <Conversation turns={turns} pending={pending} onSubmit={submit} /> : <Home onSubmit={submit} />}
     </main>
   );
 }

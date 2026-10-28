@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type RefObject } from "react";
 import { ChevronLeft, ChevronRight, Pause, Play } from "lucide-react";
 import { AskInput } from "./AskInput";
 
@@ -9,7 +9,7 @@ const SLIDES = [
   { src: "/slides/domicilio.jpg", question: "¿Dónde tramito mi constancia de domicilio?" },
 ];
 
-export function Hero({ onSubmit }: { onSubmit: (question: string) => void }) {
+export function Hero({ onSubmit, value, onValueChange, inputRef }: { onSubmit: (question: string) => void; value?: string; onValueChange?: (value: string) => void; inputRef?: RefObject<HTMLDivElement | null> }) {
   const [index, setIndex] = useState(0);
   const [playing, setPlaying] = useState(true);
   const [inputActive, setInputActive] = useState(false);
@@ -51,8 +51,8 @@ export function Hero({ onSubmit }: { onSubmit: (question: string) => void }) {
             </div>
           ))}
           <div className="absolute inset-x-0 top-0 h-44 bg-gradient-to-b from-overlay to-transparent lg:h-56" />
-          <div className="relative flex justify-center px-3 pt-6 md:px-8 md:pt-10 lg:px-4 lg:pt-4">
-            <AskInput onSubmit={onSubmit} tall suggestion={SLIDES[index]?.question} onActivityChange={setInputActive} />
+          <div id="hero-question" ref={inputRef} className="relative flex justify-center px-3 pt-6 md:px-8 md:pt-10 lg:px-4 lg:pt-4">
+            <AskInput onSubmit={onSubmit} tall suggestion={SLIDES[index]?.question} onActivityChange={setInputActive} value={value} onValueChange={onValueChange} />
           </div>
         </div>
         <div className="flex items-center justify-center gap-2 pt-4">
