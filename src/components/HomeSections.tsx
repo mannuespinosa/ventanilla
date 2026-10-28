@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { ArrowUpRight, BadgeCheck, Ban, Gift, Laptop, Lock, Smartphone, Tablet } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { config } from "@/lib/config";
 
 const PROCEDURES = [
   ["Licencia de conducir", "Acta de nacimiento", "Tenencia", "Predial"],
@@ -75,8 +76,8 @@ export function HomeSections({ onAsk }: { onAsk: () => void }) {
         <div className="mt-7 flex flex-col justify-between gap-6 md:flex-row md:items-end">
           <p className="max-w-md text-sm leading-6 text-muted-foreground">Proyecto independiente y open source. No está afiliado al Gobierno de la Ciudad de México.</p>
           <nav aria-label="Enlaces del proyecto" className="flex gap-6 text-sm text-muted-foreground">
-            <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-foreground">GitHub <ArrowUpRight size={13} className="inline" aria-hidden /></a>
-            <a href="https://opensource.org/license/mit" target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-foreground">Licencia MIT <ArrowUpRight size={13} className="inline" aria-hidden /></a>
+            <a href={config.repo} target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-foreground">GitHub <ArrowUpRight size={13} className="inline" aria-hidden /></a>
+            <a href={`${config.repo}/blob/main/LICENSE`} target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-foreground">Licencia AGPL-3.0 <ArrowUpRight size={13} className="inline" aria-hidden /></a>
           </nav>
         </div>
       </footer>

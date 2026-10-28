@@ -1,13 +1,11 @@
 import { useEffect, useState, type RefObject } from "react";
 import { ChevronLeft, ChevronRight, Pause, Play } from "lucide-react";
 import { AskInput } from "./AskInput";
+import { config } from "@/lib/config";
 
-const SLIDES = [
-  { src: "/slides/licencia.jpg", question: "¿Cómo renuevo mi licencia de conducir?" },
-  { src: "/slides/acta.jpg", question: "¿Qué necesito para sacar mi acta de nacimiento?" },
-  { src: "/slides/tenencia.jpg", question: "¿Cómo pago la tenencia?" },
-  { src: "/slides/domicilio.jpg", question: "¿Dónde tramito mi constancia de domicilio?" },
-];
+// Las preguntas vienen de ventanilla.config.json; las imágenes se asignan por posición.
+const IMAGES = ["/slides/licencia.jpg", "/slides/acta.jpg", "/slides/tenencia.jpg", "/slides/domicilio.jpg"];
+const SLIDES = config.ejemplos.map((question, i) => ({ src: IMAGES[i % IMAGES.length] ?? "", question }));
 
 export function Hero({ onSubmit, value, onValueChange, inputRef }: { onSubmit: (question: string) => void; value?: string; onValueChange?: (value: string) => void; inputRef?: RefObject<HTMLDivElement | null> }) {
   const [index, setIndex] = useState(0);
@@ -27,15 +25,15 @@ export function Hero({ onSubmit, value, onValueChange, inputRef }: { onSubmit: (
     <section className="mx-3 mb-3 md:mx-6 md:mb-6">
       <div className="rounded-[32px] bg-card px-2 pb-3 pt-14 md:px-4 md:pt-20">
         <div className="px-2 text-center">
-          <h1 className="font-serif text-[56px] leading-none text-foreground md:text-[96px] lg:text-[112px]">Hola, CDMX</h1>
+          <h1 className="font-serif text-[56px] leading-none text-foreground md:text-[96px] lg:text-[112px]">Hola, {config.nombre}</h1>
           <p className="mx-auto mt-5 max-w-md text-base text-muted-foreground md:text-lg">
-            Pregunta lo que necesites sobre trámites. Te respondemos con la fuente oficial.
+            {config.subtitulo}
           </p>
         </div>
         <div className="relative mt-10 h-[420px] overflow-hidden rounded-[28px] border border-border md:h-[520px] lg:mx-auto lg:mt-8 lg:h-[600px] lg:max-w-[920px] lg:rounded-[48px]">
           {SLIDES.map((slide, i) => (
             <div
-              key={slide.src}
+              key={`${i}-${slide.src}`}
               aria-hidden={i !== index}
               className={`absolute inset-0 bg-gradient-to-b from-secondary to-background transition-opacity duration-700 ${i === index ? "opacity-100" : "opacity-0"}`}
             >
