@@ -8,8 +8,8 @@ export function AskInput({ onSubmit, disabled = false, tall = false, suggestion,
   tall?: boolean;
   suggestion?: string | undefined;
   onActivityChange?: (active: boolean) => void;
-  value?: string;
-  onValueChange?: (value: string) => void;
+  value?: string | undefined;
+  onValueChange?: ((value: string) => void) | undefined;
 }) {
   const [localValue, setLocalValue] = useState("");
   const value = controlledValue ?? localValue;
