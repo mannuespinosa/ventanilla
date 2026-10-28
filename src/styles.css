@@ -23,6 +23,8 @@
   --font-sans: "Inter", system-ui, sans-serif;
   --color-input-bg: var(--input-bg);
   --color-overlay: var(--overlay);
+  --color-warning-border: var(--warning-border);
+  --color-warning-bg: var(--warning-bg);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -89,6 +91,8 @@
   --overlay: oklch(0.12 0.02 260 / 35%);
   --ring: oklch(0.62 0.19 256);
   --glow: 0 0 0 1px oklch(0.62 0.19 256 / 25%), 0 10px 50px -8px oklch(0.62 0.19 256 / 45%);
+  --warning-border: oklch(0.78 0.14 80 / 35%);
+  --warning-bg: oklch(0.78 0.14 80 / 5%);
 }
 
 @layer base {
@@ -110,4 +114,15 @@
 .hero-frame {
   border: 1px solid var(--border);
   box-shadow: 0 0 40px -8px oklch(0.62 0.19 256 / 35%);
+}
+
+.loading-dot { animation: loading-pulse 1.2s ease-in-out infinite; }
+.loading-dot-1 { animation-delay: 150ms; }
+.loading-dot-2 { animation-delay: 300ms; }
+@keyframes loading-pulse {
+  0%, 80%, 100% { opacity: .35; transform: translateY(0); }
+  40% { opacity: 1; transform: translateY(-3px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .loading-dot { animation: none; }
 }

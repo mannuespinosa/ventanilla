@@ -1,6 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { SiteHeader } from "@/components/SiteHeader";
 import { Hero } from "@/components/Hero";
+import { useRef, useState } from "react";
+import { Conversation, type ConversationTurn } from "@/components/Conversation";
+import { ask } from "@/lib/ask";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -16,11 +19,45 @@ export const Route = createFileRoute("/")({
   component: Index,
 });
 
-function Index() {
+export function Index() {
+  const [turns, setTurns] = useState<ConversationTurn[]>([]);
+  const [pending, setPending] = useState(false);
+  const requestRef = useRef(0);
+  const busyRef = useRef(false);
+
+  const reset = () => {
+    requestRef.current += 1;
+    busyRef.current = false;
+    setPending(false);
+    setTurns([]);
+  };
+
+  const submit = async (question: string) => {
+    const trimmed = question.trim();
+    if (!trimmed || busyRef.current) return;
+    busyRef.current = true;
+    const id = ++requestRef.current;
+    setPending(true);
+    setTurns((current) => [...current, { id, question: trimmed }]);
+    try {
+      const response = await ask(trimmed);
+      if (requestRef.current !== id) return;
+      setTurns((current) => current.map((turn) => turn.id === id ? { ...turn, response } : turn));
+    } catch {
+      if (requestRef.current !== id) return;
+      setTurns((current) => current.map((turn) => turn.id === id ? { ...turn, response: { answer: "", sources: [] } } : turn));
+    } finally {
+      if (requestRef.current === id) {
+        busyRef.current = false;
+        setPending(false);
+      }
+    }
+  };
+
   return (
-    <main className="min-h-screen bg-background">
-      <SiteHeader />
-      <Hero />
+    <main className={turns.length ? "flex h-dvh flex-col overflow-hidden bg-background" : "min-h-screen bg-background"}>
+      <div className="shrink-0"><SiteHeader onHome={reset} /></div>
+      {turns.length ? <Conversation turns={turns} pending={pending} onSubmit={submit} /> : <Hero onSubmit={submit} />}
     </main>
   );
 }
