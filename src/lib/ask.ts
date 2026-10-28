@@ -1,3 +1,5 @@
+import { config } from "./config";
+
 export type Source = { titulo: string; url: string };
 // `model` es el modelo que respondió (header x-ventanilla-model), si hubo uno.
 export type AskResponse = { answer: string; sources: Source[]; model?: string };
@@ -5,9 +7,8 @@ export type AskResponse = { answer: string; sources: Source[]; model?: string };
 export type HistoryTurn = { question: string; answer: string };
 export const MAX_HISTORY = 3;
 
-// La URL de la función no es secreta; VITE_ASK_URL permite apuntar a otra.
-export const ASK_URL: string =
-  import.meta.env["VITE_ASK_URL"] || "https://ngwzqmvqfchqiogxjzki.supabase.co/functions/v1/ask";
+// Viene de ventanilla.config.json → endpoints.ask; VITE_ASK_URL permite apuntar a otra.
+export const ASK_URL: string = config.endpoints.ask;
 
 function isSource(value: unknown): value is Source {
   if (typeof value !== "object" || value === null) return false;

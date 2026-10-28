@@ -6,6 +6,8 @@ export type VentanillaConfig = {
   subtitulo: string;
   ejemplos: string[];
   repo: string;
+  // URLs de las funciones: no son secretas. VITE_ASK_URL / VITE_VOICE_URL las sustituyen si existen.
+  endpoints: { ask: string; voice: string };
 };
 
 export const config: VentanillaConfig = {
@@ -13,4 +15,8 @@ export const config: VentanillaConfig = {
   subtitulo: raw.subtitulo,
   ejemplos: raw.ejemplos,
   repo: raw.repo,
+  endpoints: {
+    ask: import.meta.env["VITE_ASK_URL"] || raw.endpoints.ask,
+    voice: import.meta.env["VITE_VOICE_URL"] || raw.endpoints.voice,
+  },
 };
