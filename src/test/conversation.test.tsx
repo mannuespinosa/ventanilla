@@ -35,6 +35,23 @@ describe("conversation rules", () => {
     expect(screen.getByRole("log").querySelector("a")).toBeNull();
   });
 
+  it("labels the answer with the open model that produced it", () => {
+    const response = {
+      answer: "Respuesta",
+      sources: [{ titulo: "Fuente", url: "https://tramites.cdmx.gob.mx" }],
+      model: "gemma-4-26b-a4b-it",
+    };
+    render(
+      <Conversation
+        turns={[{ id: 1, question: "Pregunta", response }]}
+        pending={false}
+        onSubmit={vi.fn()}
+      />,
+    );
+    const label = screen.getByText("Respondido por Gemma 4 · modelo abierto");
+    expect(label).toHaveAttribute("title", "gemma-4-26b-a4b-it");
+  });
+
   it("blocks new questions while a response is pending", async () => {
     const response = deferred();
     vi.mocked(ask).mockReturnValue(response.promise);

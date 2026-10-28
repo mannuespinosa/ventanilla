@@ -5,6 +5,16 @@ import type { AskResponse } from "@/lib/ask";
 
 export type ConversationTurn = { id: number; question: string; response?: AskResponse };
 
+function ModelLabel({ model }: { model?: string | undefined }) {
+  if (!model) return null;
+  const name = model.startsWith("gemma-4") ? "Gemma 4" : model;
+  return (
+    <p className="mt-4 text-xs text-muted-foreground" title={model}>
+      Respondido por {name} · modelo abierto
+    </p>
+  );
+}
+
 export function Conversation({ turns, pending, onSubmit }: {
   turns: ConversationTurn[];
   pending: boolean;
@@ -32,6 +42,7 @@ export function Conversation({ turns, pending, onSubmit }: {
                 <div>
                   <p className="rounded-lg border border-warning-border bg-warning-bg px-4 py-3 text-base leading-7 text-foreground">No encontré una fuente oficial para responder esto con seguridad. Prefiero no adivinar.</p>
                   <p className="mt-3 text-sm leading-6 text-muted-foreground">Intenta reformular la pregunta o consulta el portal de trámites de la CDMX.</p>
+                  <ModelLabel model={turn.response.model} />
                 </div>
               ) : (
                 <div>
@@ -48,6 +59,7 @@ export function Conversation({ turns, pending, onSubmit }: {
                       </a>
                     ))}
                   </div>
+                  <ModelLabel model={turn.response.model} />
                 </div>
               )}
             </div>

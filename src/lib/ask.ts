@@ -1,5 +1,6 @@
 export type Source = { titulo: string; url: string };
-export type AskResponse = { answer: string; sources: Source[] };
+// `model` es el modelo que respondió (header x-ventanilla-model), si hubo uno.
+export type AskResponse = { answer: string; sources: Source[]; model?: string };
 
 // La URL de la función no es secreta; VITE_ASK_URL permite apuntar a otra.
 export const ASK_URL: string =
@@ -23,5 +24,6 @@ export async function ask(question: string): Promise<AskResponse> {
   const { answer, sources } = (data ?? {}) as Record<string, unknown>;
   if (typeof answer !== "string" || !Array.isArray(sources))
     throw new Error("Respuesta de ask con forma inválida");
-  return { answer, sources: sources.filter(isSource) };
+  const model = response.headers.get("x-ventanilla-model");
+  return { answer, sources: sources.filter(isSource), ...(model ? { model } : {}) };
 }

@@ -3,8 +3,10 @@ import { ASK_URL, ask } from "./ask";
 
 afterEach(() => vi.unstubAllGlobals());
 
-function mockFetch(status: number, body: unknown) {
-  const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify(body), { status }));
+function mockFetch(status: number, body: unknown, headers: Record<string, string> = {}) {
+  const fetchMock = vi
+    .fn()
+    .mockResolvedValue(new Response(JSON.stringify(body), { status, headers }));
   vi.stubGlobal("fetch", fetchMock);
   return fetchMock;
 }
@@ -29,6 +31,11 @@ describe("ask contract", () => {
     ];
     mockFetch(200, { answer: "Cuesta $1,142.00.", sources });
     expect(await ask("licencia")).toEqual({ answer: "Cuesta $1,142.00.", sources });
+  });
+
+  it("reports which model answered from the x-ventanilla-model header", async () => {
+    mockFetch(200, { answer: "Hola", sources: [] }, { "x-ventanilla-model": "gemma-4-26b-a4b-it" });
+    expect((await ask("hola")).model).toBe("gemma-4-26b-a4b-it");
   });
 
   it("keeps an empty sources list so the UI shows the no-source message", async () => {

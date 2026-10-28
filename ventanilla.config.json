@@ -4,8 +4,8 @@
   "ejemplos": [
     "¿Cómo renuevo mi licencia de conducir?",
     "¿Qué necesito para sacar mi acta de nacimiento?",
-    "¿Cómo pago la tenencia?",
-    "¿Dónde tramito mi constancia de domicilio?"
+    "¿Qué necesito para la verificación vehicular?",
+    "¿Cómo saco mi constancia de no antecedentes penales?"
   ],
   "dominios_permitidos": ["cdmx.gob.mx"],
   "fuentes": "scripts/urls.json",
