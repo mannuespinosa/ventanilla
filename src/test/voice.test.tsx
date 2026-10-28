@@ -85,6 +85,24 @@ describe("voz", () => {
     expect(screen.getByText("Respondido por Gemma 4 · modelo abierto")).toBeInTheDocument();
   });
 
+  it("reads only the main no-source sentence aloud on voice turns", async () => {
+    vi.mocked(transcribe).mockResolvedValue("¿Cómo tramito mi pasaporte?");
+    vi.mocked(ask).mockResolvedValue({ answer: "No encontré esto en las fuentes oficiales que tengo.", sources: [], model: "gemma-4-26b-a4b-it" });
+    render(<Index />);
+    await act(async () => fireEvent.click(micButton()));
+    await act(async () => fireEvent.click(micButton("Detener grabación")));
+    expect(speak).toHaveBeenCalledWith(expect.any(Number), "No encontré una fuente oficial para responder esto con seguridad. Prefiero no adivinar.");
+    expect(screen.getByText("Respondido por Gemma 4 · modelo abierto · Voz: ElevenLabs")).toBeInTheDocument();
+  });
+
+  it("does not read typed no-source answers aloud", async () => {
+    vi.mocked(ask).mockResolvedValue({ answer: "No encontré esto en las fuentes oficiales que tengo.", sources: [] });
+    render(<Index />);
+    await act(async () => send("pasaporte"));
+    expect(screen.getByText(/No encontré una fuente oficial/)).toBeInTheDocument();
+    expect(speak).not.toHaveBeenCalled();
+  });
+
   it("explains when microphone permission is denied", async () => {
     getUserMedia.mockRejectedValue(new DOMException("denied", "NotAllowedError"));
     render(<Index />);

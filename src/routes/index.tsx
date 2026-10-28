@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { SiteHeader } from "@/components/SiteHeader";
 import { Home } from "@/components/Home";
 import { useRef, useState } from "react";
-import { Conversation, type ConversationTurn } from "@/components/Conversation";
+import { Conversation, NO_SOURCE_MESSAGE, type ConversationTurn } from "@/components/Conversation";
 import { ask } from "@/lib/ask";
 import { speak, stopSpeech } from "@/lib/voice";
 import type { SubmitQuestion } from "@/components/AskInput";
@@ -63,10 +63,12 @@ export function Index() {
       const response = await ask(trimmed, history);
       if (requestRef.current !== id) return;
       setTurns((current) => current.map((turn) => turn.id === id ? { ...turn, response } : turn));
-      if (viaVoz && response.sources.length > 0) void readAloud(id, response.answer);
+      // Sin fuentes se lee el aviso que se muestra: en voz, el silencio parece un error.
+      if (viaVoz) void readAloud(id, response.sources.length > 0 ? response.answer : NO_SOURCE_MESSAGE);
     } catch {
       if (requestRef.current !== id) return;
       setTurns((current) => current.map((turn) => turn.id === id ? { ...turn, response: { answer: "", sources: [] } } : turn));
+      if (viaVoz) void readAloud(id, NO_SOURCE_MESSAGE);
     } finally {
       if (requestRef.current === id) {
         busyRef.current = false;

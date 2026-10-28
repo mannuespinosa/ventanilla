@@ -8,6 +8,9 @@ import { togglePause, usePlayback } from "@/lib/voice";
 // `viaVoz`: se preguntó con el micrófono. `voz`: si la respuesta se leyó o falló la lectura.
 export type ConversationTurn = { id: number; question: string; response?: AskResponse; viaVoz?: boolean; voz?: "leida" | "error" };
 
+// Lo que se muestra (y se lee en voz, si el turno fue por voz) cuando no hay fuente.
+export const NO_SOURCE_MESSAGE = "No encontré una fuente oficial para responder esto con seguridad. Prefiero no adivinar.";
+
 function ModelLabel({ model, voz = false }: { model?: string | undefined; voz?: boolean }) {
   if (!model) return null;
   const name = model.startsWith("gemma-4") ? "Gemma 4" : model;
@@ -68,9 +71,10 @@ export function Conversation({ turns, pending, onSubmit }: {
                 </div>
               ) : turn.response.sources.length === 0 ? (
                 <div>
-                  <p className="rounded-lg border border-warning-border bg-warning-bg px-4 py-3 text-base leading-7 text-foreground">No encontré una fuente oficial para responder esto con seguridad. Prefiero no adivinar.</p>
+                  <p className="rounded-lg border border-warning-border bg-warning-bg px-4 py-3 text-base leading-7 text-foreground">{NO_SOURCE_MESSAGE}</p>
+                  {turn.viaVoz && <SpeechControl turn={turn} />}
                   <p className="mt-3 text-sm leading-6 text-muted-foreground">Intenta reformular la pregunta o consulta el portal de trámites de la CDMX.</p>
-                  <ModelLabel model={turn.response.model} />
+                  <ModelLabel model={turn.response.model} voz={turn.voz === "leida"} />
                 </div>
               ) : (
                 <div>
