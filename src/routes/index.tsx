@@ -2,7 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { SiteHeader } from "@/components/SiteHeader";
 import { Home } from "@/components/Home";
 import { useRef, useState } from "react";
-import { Conversation, NO_SOURCE_MESSAGE, type ConversationTurn } from "@/components/Conversation";
+import { Conversation, type ConversationTurn } from "@/components/Conversation";
+import { NO_SOURCE_MESSAGE, noSourceMessage } from "@/lib/no-source";
 import { ask } from "@/lib/ask";
 import { speak, stopSpeech } from "@/lib/voice";
 import type { SubmitQuestion } from "@/components/AskInput";
@@ -63,8 +64,9 @@ export function Index() {
       const response = await ask(trimmed, history);
       if (requestRef.current !== id) return;
       setTurns((current) => current.map((turn) => turn.id === id ? { ...turn, response } : turn));
-      // Sin fuentes se lee el aviso que se muestra: en voz, el silencio parece un error.
-      if (viaVoz) void readAloud(id, response.sources.length > 0 ? response.answer : NO_SOURCE_MESSAGE);
+      // Sin fuentes se lee el aviso que se muestra (con la autoridad si hay derivación,
+      // nunca la URL): en voz, el silencio parece un error.
+      if (viaVoz) void readAloud(id, response.sources.length > 0 ? response.answer : noSourceMessage(response.derivacion));
     } catch {
       if (requestRef.current !== id) return;
       setTurns((current) => current.map((turn) => turn.id === id ? { ...turn, response: { answer: "", sources: [] } } : turn));

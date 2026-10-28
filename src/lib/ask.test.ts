@@ -59,6 +59,26 @@ describe("ask contract", () => {
     expect((await ask("hola")).model).toBe("gemma-4-26b-a4b-it");
   });
 
+  it("passes a referral only when there are no sources", async () => {
+    const derivacion = {
+      autoridad: "Secretaría de Relaciones Exteriores (SRE)",
+      url: "https://www.gob.mx/pasaporte",
+    };
+    mockFetch(200, { answer: "No encontré esto.", sources: [], derivacion });
+    expect((await ask("pasaporte")).derivacion).toEqual(derivacion);
+
+    const sources = [{ titulo: "Ficha", url: "https://www.cdmx.gob.mx" }];
+    mockFetch(200, { answer: "Necesitas tu RFC.", sources, derivacion });
+    expect(await ask("RFC licencia")).not.toHaveProperty("derivacion");
+
+    mockFetch(200, {
+      answer: "x",
+      sources: [],
+      derivacion: { autoridad: "X", url: "javascript:1" },
+    });
+    expect(await ask("x")).not.toHaveProperty("derivacion");
+  });
+
   it("keeps an empty sources list so the UI shows the no-source message", async () => {
     mockFetch(200, { answer: "No encontré esto en las fuentes oficiales que tengo.", sources: [] });
     expect((await ask("¿Dónde compro café?")).sources).toEqual([]);

@@ -104,6 +104,26 @@ describe("voz", () => {
     expect(screen.getByText("Respondido por Gemma 4 · modelo abierto · Voz: ElevenLabs")).toBeInTheDocument();
   });
 
+  it("reads the referral authority aloud on voice turns, without the URL", async () => {
+    vi.mocked(transcribe).mockResolvedValue("Renovación de pasaporte de mi hija");
+    vi.mocked(ask).mockResolvedValue({
+      answer: "No encontré esto en las fuentes oficiales que tengo.",
+      sources: [],
+      derivacion: {
+        autoridad: "Secretaría de Relaciones Exteriores (SRE)",
+        url: "https://www.gob.mx/pasaporte",
+      },
+    });
+    render(<Index />);
+    await record();
+    await act(async () => fireEvent.click(micButton("Enviar audio")));
+    expect(speak).toHaveBeenCalledWith(
+      expect.any(Number),
+      "No encontré una fuente oficial de la Ciudad de México para esto. Este trámite lo atiende Secretaría de Relaciones Exteriores (SRE).",
+    );
+    expect(vi.mocked(speak).mock.calls[0]?.[1]).not.toContain("gob.mx");
+  });
+
   it("does not read typed no-source answers aloud", async () => {
     vi.mocked(ask).mockResolvedValue({ answer: "No encontré esto en las fuentes oficiales que tengo.", sources: [] });
     render(<Index />);

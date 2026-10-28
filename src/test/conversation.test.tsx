@@ -35,6 +35,50 @@ describe("conversation rules", () => {
     expect(screen.getByRole("log").querySelector("a")).toBeNull();
   });
 
+  it("refers to the right authority with a chip and no rephrase hint", () => {
+    const response = {
+      answer: "No encontré esto en las fuentes oficiales que tengo.",
+      sources: [],
+      derivacion: {
+        autoridad: "Secretaría de Relaciones Exteriores (SRE)",
+        url: "https://www.gob.mx/pasaporte",
+      },
+    };
+    render(
+      <Conversation
+        turns={[{ id: 1, question: "Renovación de pasaporte de mi hija", response }]}
+        pending={false}
+        onSubmit={vi.fn()}
+      />,
+    );
+    expect(
+      screen.getByText(
+        "No encontré una fuente oficial de la Ciudad de México para esto. Este trámite lo atiende Secretaría de Relaciones Exteriores (SRE).",
+      ),
+    ).toBeInTheDocument();
+    const chip = screen.getByRole("link", { name: /Secretaría de Relaciones Exteriores/ });
+    expect(chip).toHaveAttribute("href", "https://www.gob.mx/pasaporte");
+    expect(chip).toHaveTextContent("www.gob.mx");
+    expect(screen.queryByText(/Intenta reformular/)).not.toBeInTheDocument();
+  });
+
+  it("keeps the usual notice when there is no referral", () => {
+    const response = {
+      answer: "No encontré esto en las fuentes oficiales que tengo.",
+      sources: [],
+    };
+    render(
+      <Conversation
+        turns={[{ id: 1, question: "¿Cómo saco mi RFC?", response }]}
+        pending={false}
+        onSubmit={vi.fn()}
+      />,
+    );
+    expect(screen.getByText(/Prefiero no adivinar/)).toBeInTheDocument();
+    expect(screen.getByText(/Intenta reformular/)).toBeInTheDocument();
+    expect(screen.getByRole("log").querySelector("a")).toBeNull();
+  });
+
   it("labels the answer with the open model that produced it", () => {
     const response = {
       answer: "Respuesta",

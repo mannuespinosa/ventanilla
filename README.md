@@ -22,9 +22,11 @@ Edge function `ask` (supabase/functions/ask)
   │     pgvector (coseno) + full-text en español, fusionados con RRF
   │     (si el embedding falla, sigue funcionando solo con full-text)
   ├─ Gemma 4 vía Gemini API: responde SOLO con los fragmentos y cita [n]
-  └─ el servidor arma `sources` con los fragmentos citados
+  ├─ el servidor arma `sources` con los fragmentos citados
+  └─ sin fuente: si el tema está en `derivaciones` del config, agrega la
+        autoridad que lo atiende y su liga curada
   ▼
-{answer, sources: [{titulo, url}]}
+{answer, sources: [{titulo, url}], derivacion?: {autoridad, url}}
 ```
 
 - **Fuentes:** páginas oficiales de `*.cdmx.gob.mx`, descubiertas y rastreadas
@@ -76,6 +78,20 @@ oficiales puede tener la suya.
    Voice Design, para que puedas recrear una voz equivalente para tu ciudad.
    Los IDs de voz no son secretos; el único secreto de voz es
    `ELEVENLABS_API_KEY` y va en `.env`.
+
+   En `derivaciones` cada institución define qué no le toca y a dónde mandar
+   a la gente. Cada entrada tiene `temas` (palabras o frases), la `autoridad`
+   y una `url` oficial que tú verificas:
+   ```json
+   { "temas": ["pasaporte"], "autoridad": "Secretaría de Relaciones Exteriores (SRE)",
+     "url": "https://www.gob.mx/pasaporte" }
+   ```
+   Solo se usan cuando Ventanilla no encontró fuente propia: si un tema aparece
+   en la pregunta (sin acentos ni mayúsculas, por palabra completa), la respuesta
+   dice "Este trámite lo atiende {autoridad}" y muestra la liga. Una respuesta
+   que sí tiene fuentes nunca se deriva, y el modelo nunca genera estas ligas.
+   Mejor pocas derivaciones correctas que muchas dudosas: si no puedes verificar
+   la URL, no la agregues.
 2. **Define tus trámites y descubre fuentes.** Cambia `TRAMITES` en
    `scripts/ingest.py` por los de tu ciudad, corre
    `uv run scripts/ingest.py --discover` y revisa a mano el archivo de
@@ -83,7 +99,8 @@ oficiales puede tener la suya.
 3. **Crea tu backend.** En un proyecto nuevo de Supabase aplica
    `supabase/migrations/*.sql`, llena `.env`, corre
    `uv run scripts/ingest.py --ingest` y despliega `supabase/functions/ask`
-   con el secreto `GEMINI_API_KEY`. Ajusta en el prompt de sistema de
+   con el secreto `GEMINI_API_KEY` (incluye `ventanilla.config.json` en el
+   despliegue: `ask` y `voice` lo importan). Ajusta en el prompt de sistema de
    `ask/index.ts` el nombre de tu ciudad y qué fuente manda en costos.
 4. **Publica el frontend.** Pon la URL de tu función en `VITE_ASK_URL`,
    corre `npm run build` y despliega donde quieras.

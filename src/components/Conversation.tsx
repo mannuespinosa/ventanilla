@@ -3,13 +3,23 @@ import { Link as LinkIcon, Loader2, Pause, Play } from "lucide-react";
 import { AskInput, type SubmitQuestion } from "./AskInput";
 import { AnswerMarkdown } from "./AnswerMarkdown";
 import type { AskResponse } from "@/lib/ask";
+import { noSourceMessage } from "@/lib/no-source";
 import { togglePause, usePlayback } from "@/lib/voice";
 
 // `viaVoz`: se preguntó con el micrófono. `voz`: si la respuesta se leyó o falló la lectura.
 export type ConversationTurn = { id: number; question: string; response?: AskResponse; viaVoz?: boolean; voz?: "leida" | "error" };
 
-// Lo que se muestra (y se lee en voz, si el turno fue por voz) cuando no hay fuente.
-export const NO_SOURCE_MESSAGE = "No encontré una fuente oficial para responder esto con seguridad. Prefiero no adivinar.";
+function SourceChip({ titulo, url }: { titulo: string; url: string }) {
+  return (
+    <a href={url} target="_blank" rel="noopener noreferrer" className="inline-flex max-w-full items-center gap-2 rounded-lg border border-border px-3 py-2 transition-colors hover:border-white/30 hover:bg-card focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
+      <LinkIcon size={15} className="shrink-0 text-muted-foreground" />
+      <span className="min-w-0 text-sm">
+        <span className="block break-words text-foreground">{titulo}</span>
+        <span className="block break-all text-xs text-muted-foreground">{new URL(url).hostname}</span>
+      </span>
+    </a>
+  );
+}
 
 function ModelLabel({ model, voz = false }: { model?: string | undefined; voz?: boolean }) {
   if (!model) return null;
@@ -71,9 +81,20 @@ export function Conversation({ turns, pending, onSubmit }: {
                 </div>
               ) : turn.response.sources.length === 0 ? (
                 <div>
-                  <p className="rounded-lg border border-warning-border bg-warning-bg px-4 py-3 text-base leading-7 text-foreground">{NO_SOURCE_MESSAGE}</p>
+                  <p className="rounded-lg border border-warning-border bg-warning-bg px-4 py-3 text-base leading-7 text-foreground">
+                    {noSourceMessage(turn.response.derivacion)}
+                  </p>
                   {turn.viaVoz && <SpeechControl turn={turn} />}
-                  <p className="mt-3 text-sm leading-6 text-muted-foreground">Intenta reformular la pregunta o consulta el portal de trámites de la CDMX.</p>
+                  {turn.response.derivacion ? (
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      <SourceChip
+                        titulo={turn.response.derivacion.autoridad}
+                        url={turn.response.derivacion.url}
+                      />
+                    </div>
+                  ) : (
+                    <p className="mt-3 text-sm leading-6 text-muted-foreground">Intenta reformular la pregunta o consulta el portal de trámites de la CDMX.</p>
+                  )}
                   <ModelLabel model={turn.response.model} voz={turn.voz === "leida"} />
                 </div>
               ) : (
@@ -83,13 +104,7 @@ export function Conversation({ turns, pending, onSubmit }: {
                   <p className="mb-2 mt-5 text-xs text-muted-foreground">Fuentes</p>
                   <div className="flex flex-wrap gap-2">
                     {turn.response.sources.map((source, i) => (
-                      <a key={`${source.url}-${i}`} href={source.url} target="_blank" rel="noopener noreferrer" className="inline-flex max-w-full items-center gap-2 rounded-lg border border-border px-3 py-2 transition-colors hover:border-white/30 hover:bg-card focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
-                        <LinkIcon size={15} className="shrink-0 text-muted-foreground" />
-                        <span className="min-w-0 text-sm">
-                          <span className="block break-words text-foreground">{source.titulo}</span>
-                          <span className="block break-all text-xs text-muted-foreground">{new URL(source.url).hostname}</span>
-                        </span>
-                      </a>
+                      <SourceChip key={`${source.url}-${i}`} titulo={source.titulo} url={source.url} />
                     ))}
                   </div>
                   <ModelLabel model={turn.response.model} voz={turn.voz === "leida"} />
