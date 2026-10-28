@@ -4,6 +4,8 @@ import { Home } from "@/components/Home";
 import { useRef, useState } from "react";
 import { Conversation, type ConversationTurn } from "@/components/Conversation";
 import { ask } from "@/lib/ask";
+import { speak, stopSpeech } from "@/lib/voice";
+import type { SubmitQuestion } from "@/components/AskInput";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -27,26 +29,41 @@ export function Index() {
 
   const reset = () => {
     requestRef.current += 1;
+    stopSpeech();
     busyRef.current = false;
     setPending(false);
     setTurns([]);
   };
 
-  const submit = async (question: string) => {
+  const markVoz = (id: number, voz: "leida" | "error") =>
+    setTurns((current) => current.map((turn) => turn.id === id ? { ...turn, voz } : turn));
+
+  // Solo las preguntas por voz se leen solas; si llega otra pregunta o se reinicia, se calla.
+  const readAloud = async (id: number, answer: string) => {
+    try {
+      if (await speak(id, answer) && requestRef.current === id) markVoz(id, "leida");
+    } catch {
+      if (requestRef.current === id) markVoz(id, "error");
+    }
+  };
+
+  const submit: SubmitQuestion = async (question, { viaVoz = false } = {}) => {
     const trimmed = question.trim();
     if (!trimmed || busyRef.current) return;
     busyRef.current = true;
+    stopSpeech();
     const id = ++requestRef.current;
     setPending(true);
     // Turnos ya respondidos antes de esta pregunta; ask.ts se queda con los últimos.
     const history = turns.flatMap((turn) =>
       turn.response ? [{ question: turn.question, answer: turn.response.answer }] : [],
     );
-    setTurns((current) => [...current, { id, question: trimmed }]);
+    setTurns((current) => [...current, { id, question: trimmed, ...(viaVoz ? { viaVoz } : {}) }]);
     try {
       const response = await ask(trimmed, history);
       if (requestRef.current !== id) return;
       setTurns((current) => current.map((turn) => turn.id === id ? { ...turn, response } : turn));
+      if (viaVoz && response.sources.length > 0) void readAloud(id, response.answer);
     } catch {
       if (requestRef.current !== id) return;
       setTurns((current) => current.map((turn) => turn.id === id ? { ...turn, response: { answer: "", sources: [] } } : turn));

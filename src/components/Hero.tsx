@@ -1,13 +1,13 @@
 import { useEffect, useState, type RefObject } from "react";
 import { ChevronLeft, ChevronRight, Pause, Play } from "lucide-react";
-import { AskInput } from "./AskInput";
+import { AskInput, type SubmitQuestion } from "./AskInput";
 import { config } from "@/lib/config";
 
 // Las preguntas vienen de ventanilla.config.json; las imágenes se asignan por posición.
 const IMAGES = ["/slides/licencia.jpg", "/slides/acta.jpg", "/slides/tenencia.jpg", "/slides/domicilio.jpg"];
 const SLIDES = config.ejemplos.map((question, i) => ({ src: IMAGES[i % IMAGES.length] ?? "", question }));
 
-export function Hero({ onSubmit, value, onValueChange, inputRef }: { onSubmit: (question: string) => void; value?: string; onValueChange?: (value: string) => void; inputRef?: RefObject<HTMLDivElement | null> }) {
+export function Hero({ onSubmit, value, onValueChange, inputRef }: { onSubmit: SubmitQuestion; value?: string; onValueChange?: (value: string) => void; inputRef?: RefObject<HTMLDivElement | null> }) {
   const [index, setIndex] = useState(0);
   const [playing, setPlaying] = useState(true);
   const [inputActive, setInputActive] = useState(false);

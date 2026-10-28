@@ -1,9 +1,47 @@
 import { useEffect, useId, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
-import { ArrowRight, Mic, Paperclip } from "lucide-react";
+import { ArrowRight, Loader2, Mic, Paperclip } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useVoiceRecorder, type RecorderStatus } from "@/hooks/use-voice-recorder";
+
+// `viaVoz`: la pregunta llegó por el micrófono y su respuesta se lee en voz alta.
+export type SubmitQuestion = (question: string, options?: { viaVoz?: boolean }) => void;
+
+function MicButton({ status, seconds, disabled, onClick, size, className }: {
+  status: RecorderStatus;
+  seconds: number;
+  disabled: boolean;
+  onClick: () => void;
+  size: number;
+  className: string;
+}) {
+  const label = status === "recording" ? "Detener grabación" : status === "transcribing" ? "Transcribiendo audio" : "Usar micrófono";
+  return (
+    <Button
+      variant="ghost"
+      size="icon"
+      type="button"
+      disabled={status === "transcribing" || (disabled && status === "idle")}
+      onClick={onClick}
+      aria-label={label}
+      aria-pressed={status === "recording"}
+      className={`${className} ${status === "recording" ? "w-auto gap-1.5 px-3 text-foreground" : ""}`}
+    >
+      {status === "recording" ? (
+        <>
+          <span aria-hidden className="h-2 w-2 rounded-full bg-destructive motion-safe:animate-pulse" />
+          <span className="text-xs tabular-nums">0:{String(seconds).padStart(2, "0")}</span>
+        </>
+      ) : status === "transcribing" ? (
+        <Loader2 size={size} className="motion-safe:animate-spin" />
+      ) : (
+        <Mic size={size} />
+      )}
+    </Button>
+  );
+}
 
 export function AskInput({ onSubmit, disabled = false, tall = false, suggestion, onActivityChange, value: controlledValue, onValueChange }: {
-  onSubmit: (question: string) => void;
+  onSubmit: SubmitQuestion;
   disabled?: boolean;
   tall?: boolean;
   suggestion?: string | undefined;
@@ -43,6 +81,9 @@ export function AskInput({ onSubmit, disabled = false, tall = false, suggestion,
     onSubmit(text);
     setValue("");
   };
+
+  const recorder = useVoiceRecorder((text) => onSubmit(text, { viaVoz: true }));
+  const micProps = { status: recorder.status, seconds: recorder.seconds, disabled, onClick: recorder.toggle };
 
   const sendClass = "flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground transition hover:bg-primary/90 disabled:bg-primary/15 disabled:text-muted-foreground";
   const iconClass = "shrink-0 rounded-full p-2 text-muted-foreground hover:text-foreground";
@@ -87,9 +128,7 @@ export function AskInput({ onSubmit, disabled = false, tall = false, suggestion,
           <Button variant="ghost" size="icon" disabled={disabled} type="button" aria-label="Adjuntar archivo" className={iconClass}>
             <Paperclip size={18} />
           </Button>
-          <Button variant="ghost" size="icon" disabled={disabled} type="button" aria-label="Usar micrófono" className={iconClass}>
-            <Mic size={18} />
-          </Button>
+          <MicButton {...micProps} size={18} className={iconClass} />
           <Button
             type="submit"
             aria-label="Enviar pregunta"
@@ -130,9 +169,7 @@ export function AskInput({ onSubmit, disabled = false, tall = false, suggestion,
         <Button variant="ghost" size="icon" disabled={disabled} type="button" aria-label="Adjuntar archivo" className={iconClass}>
           <Paperclip size={18} />
         </Button>
-        <Button variant="ghost" size="icon" disabled={disabled} type="button" aria-label="Usar micrófono" className={iconClass}>
-          <Mic size={18} />
-        </Button>
+        <MicButton {...micProps} size={18} className={iconClass} />
         <Button
           type="submit"
           aria-label="Enviar pregunta"
@@ -173,9 +210,7 @@ export function AskInput({ onSubmit, disabled = false, tall = false, suggestion,
           <Button variant="ghost" size="icon" disabled={disabled} type="button" aria-label="Adjuntar archivo" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full p-0 text-muted-foreground hover:text-foreground">
             <Paperclip size={22} />
           </Button>
-          <Button variant="ghost" size="icon" disabled={disabled} type="button" aria-label="Usar micrófono" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full p-0 text-muted-foreground hover:text-foreground">
-            <Mic size={22} />
-          </Button>
+          <MicButton {...micProps} size={22} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full p-0 text-muted-foreground hover:text-foreground" />
           <Button
             type="submit"
             aria-label="Enviar pregunta"
@@ -185,6 +220,10 @@ export function AskInput({ onSubmit, disabled = false, tall = false, suggestion,
             <ArrowRight size={22} />
           </Button>
         </form>
+      )}
+
+      {recorder.error && (
+        <p role="alert" className="mx-auto mt-2 max-w-[640px] px-2 text-sm leading-5 text-muted-foreground">{recorder.error}</p>
       )}
     </>
   );

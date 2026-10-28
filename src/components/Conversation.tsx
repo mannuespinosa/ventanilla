@@ -1,25 +1,52 @@
 import { useEffect, useRef } from "react";
-import { Link as LinkIcon } from "lucide-react";
-import { AskInput } from "./AskInput";
+import { Link as LinkIcon, Loader2, Pause, Play } from "lucide-react";
+import { AskInput, type SubmitQuestion } from "./AskInput";
 import { AnswerMarkdown } from "./AnswerMarkdown";
 import type { AskResponse } from "@/lib/ask";
+import { togglePause, usePlayback } from "@/lib/voice";
 
-export type ConversationTurn = { id: number; question: string; response?: AskResponse };
+// `viaVoz`: se preguntó con el micrófono. `voz`: si la respuesta se leyó o falló la lectura.
+export type ConversationTurn = { id: number; question: string; response?: AskResponse; viaVoz?: boolean; voz?: "leida" | "error" };
 
-function ModelLabel({ model }: { model?: string | undefined }) {
+function ModelLabel({ model, voz = false }: { model?: string | undefined; voz?: boolean }) {
   if (!model) return null;
   const name = model.startsWith("gemma-4") ? "Gemma 4" : model;
   return (
     <p className="mt-4 text-xs text-muted-foreground" title={model}>
-      Respondido por {name} · modelo abierto
+      Respondido por {name} · modelo abierto{voz && " · Voz: ElevenLabs"}
     </p>
+  );
+}
+
+const chipClass = "inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm text-foreground transition-colors hover:border-white/30 hover:bg-card focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-60";
+
+function SpeechControl({ turn }: { turn: ConversationTurn }) {
+  const playback = usePlayback();
+  if (turn.voz === "error") {
+    return <p className="mt-3 text-xs text-muted-foreground">No pude leer la respuesta en voz alta; aquí la tienes por escrito.</p>;
+  }
+  if (playback.turnId !== turn.id || playback.status === "idle") return null;
+  if (playback.status === "loading") {
+    return (
+      <button type="button" disabled className={`mt-4 ${chipClass}`}>
+        <Loader2 size={15} className="text-muted-foreground motion-safe:animate-spin" />
+        Preparando audio…
+      </button>
+    );
+  }
+  const playing = playback.status === "playing";
+  return (
+    <button type="button" onClick={togglePause} className={`mt-4 ${chipClass}`}>
+      {playing ? <Pause size={15} className="text-muted-foreground" /> : <Play size={15} className="text-muted-foreground" />}
+      {playing ? "Pausar lectura" : "Reanudar lectura"}
+    </button>
   );
 }
 
 export function Conversation({ turns, pending, onSubmit }: {
   turns: ConversationTurn[];
   pending: boolean;
-  onSubmit: (question: string) => void;
+  onSubmit: SubmitQuestion;
 }) {
   const endRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -48,6 +75,7 @@ export function Conversation({ turns, pending, onSubmit }: {
               ) : (
                 <div>
                   <AnswerMarkdown>{turn.response.answer}</AnswerMarkdown>
+                  {turn.viaVoz && <SpeechControl turn={turn} />}
                   <p className="mb-2 mt-5 text-xs text-muted-foreground">Fuentes</p>
                   <div className="flex flex-wrap gap-2">
                     {turn.response.sources.map((source, i) => (
@@ -60,7 +88,7 @@ export function Conversation({ turns, pending, onSubmit }: {
                       </a>
                     ))}
                   </div>
-                  <ModelLabel model={turn.response.model} />
+                  <ModelLabel model={turn.response.model} voz={turn.voz === "leida"} />
                 </div>
               )}
             </div>

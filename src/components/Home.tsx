@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import { AskInput } from "./AskInput";
+import { AskInput, type SubmitQuestion } from "./AskInput";
 import { Hero } from "./Hero";
 import { HomeSections } from "./HomeSections";
 
-export function Home({ onSubmit }: { onSubmit: (question: string) => void }) {
+export function Home({ onSubmit }: { onSubmit: SubmitQuestion }) {
   const [draft, setDraft] = useState("");
   const [showFixed, setShowFixed] = useState(false);
   const heroInputRef = useRef<HTMLDivElement>(null);
