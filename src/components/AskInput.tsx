@@ -6,7 +6,7 @@ export function AskInput({ onSubmit, disabled = false, tall = false, suggestion,
   onSubmit: (question: string) => void;
   disabled?: boolean;
   tall?: boolean;
-  suggestion?: string;
+  suggestion?: string | undefined;
   onActivityChange?: (active: boolean) => void;
 }) {
   const [value, setValue] = useState("");
