@@ -56,6 +56,31 @@ Edge function `ask` (supabase/functions/ask)
 > ⚠️ `ask` es pública (no pide JWT) para que el frontend no necesite llaves.
 > Cualquiera puede gastar la cuota de Gemini. Es aceptable para una demo, no para producción.
 
+Para comparar modelos: `uv run scripts/bench.py` corre preguntas de prueba contra
+`gemma-4-31b-it` y `gemma-4-26b-a4b-it` y muestra latencia, respuesta y fuentes.
+
+## Levanta tu propia Ventanilla
+
+Ventanilla no está atada a la CDMX: cualquier ciudad o estado con portales
+oficiales puede tener la suya.
+
+1. **Haz fork y edita `ventanilla.config.json`.** `nombre` aparece en
+   "Hola, {nombre}"; `subtitulo` y `ejemplos` (las preguntas que rotan en el
+   buscador) son textos de la portada; `repo` es tu fork;
+   `dominios_permitidos` limita las fuentes, por ejemplo `["jalisco.gob.mx"]`
+   (se aceptan sus subdominios).
+2. **Define tus trámites y descubre fuentes.** Cambia `TRAMITES` en
+   `scripts/ingest.py` por los de tu ciudad, corre
+   `uv run scripts/ingest.py --discover` y revisa a mano el archivo de
+   `fuentes` (`scripts/urls.json`): borra apps, noticias viejas y duplicados.
+3. **Crea tu backend.** En un proyecto nuevo de Supabase aplica
+   `supabase/migrations/*.sql`, llena `.env`, corre
+   `uv run scripts/ingest.py --ingest` y despliega `supabase/functions/ask`
+   con el secreto `GEMINI_API_KEY`. Ajusta en el prompt de sistema de
+   `ask/index.ts` el nombre de tu ciudad y qué fuente manda en costos.
+4. **Publica el frontend.** Pon la URL de tu función en `VITE_ASK_URL`,
+   corre `npm run build` y despliega donde quieras.
+
 ---
 
 This project was built with [Lovable](https://lovable.dev).

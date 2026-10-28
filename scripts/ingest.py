@@ -9,7 +9,8 @@ Uso:
   uv run scripts/ingest.py --ingest     # rastrea las URLs de urls.json, divide, genera embeddings y carga
   uv run scripts/ingest.py --embed-missing  # genera embeddings de filas que se cargaron sin él
 
-Lee GEMINI_API_KEY, FIRECRAWL_API_KEY, SUPABASE_URL y SUPABASE_SERVICE_ROLE_KEY de .env.
+Lee GEMINI_API_KEY, FIRECRAWL_API_KEY, SUPABASE_URL y SUPABASE_SERVICE_ROLE_KEY de .env,
+y `dominios_permitidos` y `fuentes` de ventanilla.config.json.
 """
 
 from __future__ import annotations
@@ -27,7 +28,9 @@ import httpx
 from dotenv import load_dotenv
 
 ROOT = Path(__file__).resolve().parent.parent
-URLS_FILE = ROOT / "scripts" / "urls.json"
+CONFIG = json.loads((ROOT / "ventanilla.config.json").read_text())
+URLS_FILE = ROOT / CONFIG["fuentes"]
+DOMINIOS: list[str] = [d.lower() for d in CONFIG["dominios_permitidos"]]
 CACHE_DIR = ROOT / "scripts" / ".cache"
 
 FIRECRAWL = "https://api.firecrawl.dev/v2"
@@ -57,9 +60,9 @@ def env(name: str) -> str:
     return value
 
 
-def is_cdmx(url: str) -> bool:
+def dominio_permitido(url: str) -> bool:
     host = (urlparse(url).hostname or "").lower()
-    return host == "cdmx.gob.mx" or host.endswith(".cdmx.gob.mx")
+    return any(host == d or host.endswith(f".{d}") for d in DOMINIOS)
 
 
 # --- Descubrimiento -----------------------------------------------------------
@@ -75,22 +78,23 @@ def discover(client: httpx.Client) -> None:
         search = client.post(
             f"{FIRECRAWL}/search",
             headers=headers,
-            json={"query": f"site:cdmx.gob.mx {terms}", "limit": 10, "country": "MX"},
+            json={"query": f"{' OR '.join(f'site:{d}' for d in DOMINIOS)} {terms}", "limit": 10, "country": "MX"},
         )
         search.raise_for_status()
         for item in search.json().get("data", {}).get("web", []):
-            if is_cdmx(item["url"]):
+            if dominio_permitido(item["url"]):
                 found.setdefault(item["url"], {"titulo": item.get("title", ""), "origen": "search"})
 
-        site_map = client.post(
-            f"{FIRECRAWL}/map",
-            headers=headers,
-            json={"url": "https://tramites.cdmx.gob.mx", "search": terms, "limit": 5},
-        )
-        site_map.raise_for_status()
-        for link in site_map.json().get("links", []):
-            if is_cdmx(link["url"]):
-                found.setdefault(link["url"], {"titulo": link.get("title", ""), "origen": "map"})
+        for dominio in DOMINIOS:
+            site_map = client.post(
+                f"{FIRECRAWL}/map",
+                headers=headers,
+                json={"url": f"https://{dominio}", "search": terms, "limit": 5},
+            )
+            site_map.raise_for_status()
+            for link in site_map.json().get("links", []):
+                if dominio_permitido(link["url"]):
+                    found.setdefault(link["url"], {"titulo": link.get("title", ""), "origen": "map"})
 
         result[tramite] = [
             {"url": url, "dominio": urlparse(url).hostname, **meta}
@@ -228,8 +232,8 @@ def ingest(client: httpx.Client) -> None:
         print(f"{tramite}:")
         for entry in entries:
             url = entry["url"]
-            if not is_cdmx(url):
-                print(f"   ✗ fuera de cdmx.gob.mx, se omite: {url}")
+            if not dominio_permitido(url):
+                print(f"   ✗ fuera de los dominios permitidos, se omite: {url}")
                 continue
             page = scrape(client, url)
             if not page:

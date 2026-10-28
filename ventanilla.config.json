@@ -1,0 +1,13 @@
+{
+  "nombre": "CDMX",
+  "subtitulo": "Pregunta lo que necesites sobre trámites. Te respondemos con la fuente oficial.",
+  "ejemplos": [
+    "¿Cómo renuevo mi licencia de conducir?",
+    "¿Qué necesito para sacar mi acta de nacimiento?",
+    "¿Cómo pago la tenencia?",
+    "¿Dónde tramito mi constancia de domicilio?"
+  ],
+  "dominios_permitidos": ["cdmx.gob.mx"],
+  "fuentes": "scripts/urls.json",
+  "repo": "https://github.com/mannuespinosa/ventanilla"
+}

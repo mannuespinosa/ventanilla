@@ -18,7 +18,14 @@ Reglas:
 5. Para COSTOS, la fuente prioritaria es data.finanzas.cdmx.gob.mx/formato_lc (es la que genera la línea de captura). Si otra fuente oficial da un monto distinto, dilo explícitamente, por ejemplo: "la ficha indica $X, pero el monto vigente para pago según Finanzas es $Y", y cita ambas.
 6. Si los fragmentos no contienen la respuesta a la pregunta, responde exactamente: NO_LO_SE`;
 
-type Doc = { id: number; tramite: string; titulo: string; url: string; contenido: string; score: number };
+type Doc = {
+  id: number;
+  tramite: string;
+  titulo: string;
+  url: string;
+  contenido: string;
+  score: number;
+};
 type Source = { titulo: string; url: string };
 
 const corsHeaders = {
@@ -82,14 +89,20 @@ async function generate(model: string, question: string, docs: Doc[]): Promise<s
     headers: { "x-goog-api-key": env("GEMINI_API_KEY"), "Content-Type": "application/json" },
     body: JSON.stringify({
       systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
-      contents: [{ role: "user", parts: [{ text: `Fragmentos:\n\n${fragments}\n\nPregunta: ${question}` }] }],
+      contents: [
+        { role: "user", parts: [{ text: `Fragmentos:\n\n${fragments}\n\nPregunta: ${question}` }] },
+      ],
       generationConfig: { temperature: 0.2, maxOutputTokens: 1024 },
     }),
   });
   if (!response.ok) throw new Error(`${model} ${response.status} ${await response.text()}`);
   const data = await response.json();
   const parts: { text?: string; thought?: boolean }[] = data.candidates?.[0]?.content?.parts ?? [];
-  return parts.filter((part) => !part.thought && part.text).map((part) => part.text).join("").trim();
+  return parts
+    .filter((part) => !part.thought && part.text)
+    .map((part) => part.text)
+    .join("")
+    .trim();
 }
 
 // Convierte las citas [n] / [n, m] en fuentes, solo de los fragmentos citados,
@@ -128,12 +141,14 @@ Deno.serve(async (req) => {
   }
   const question = typeof body.question === "string" ? body.question.trim() : "";
   if (!question) return json({ error: "Falta question" }, 400);
-  if (question.length > MAX_QUESTION) return json({ error: `Máximo ${MAX_QUESTION} caracteres` }, 400);
+  if (question.length > MAX_QUESTION)
+    return json({ error: `Máximo ${MAX_QUESTION} caracteres` }, 400);
 
   // `model` solo se acepta para el benchmark y solo de la lista permitida.
-  const primary = typeof body.model === "string" && MODELS.includes(body.model)
-    ? body.model
-    : Deno.env.get("ASK_MODEL") ?? MODELS[0];
+  const primary =
+    typeof body.model === "string" && MODELS.includes(body.model)
+      ? body.model
+      : (Deno.env.get("ASK_MODEL") ?? MODELS[0]);
   const models = [primary, ...MODELS.filter((m) => m !== primary)];
 
   try {
