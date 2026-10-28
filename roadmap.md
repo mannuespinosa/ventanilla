@@ -11,6 +11,6 @@
 - [x] Verify carousel, pause on focus, empty submit, and palette in browser.
 
 # Home sections and fixed input
-- [ ] Add manifesto, procedure marquee, device section, and footer.
-- [ ] Share the home question draft and show the fixed composer when the hero composer leaves view.
-- [ ] Verify home-only visibility, focus link, reduced motion, and desktop/mobile flows.
+- [x] Add manifesto, procedure marquee, device section, and footer.
+- [x] Share the home question draft and show the fixed composer when the hero composer leaves view.
+- [x] Verify home-only visibility, focus link, reduced motion, and desktop/mobile flows.
