@@ -45,7 +45,14 @@ function RecordingControls({ recorder, size, large = false }: { recorder: Record
   return (
     <>
       <div role="status" className={`flex min-w-0 flex-1 items-center gap-3 ${large ? "text-xl" : "text-base"}`}>
-        <span className="truncate text-foreground">{transcribing ? "Transcribiendo…" : "Escuchando…"}</span>
+        {recorder.liveText ? (
+          // RTL + texto LTR aislado: si no cabe, se ve el final (lo último que dijiste).
+          <span className="min-w-0 flex-1 truncate text-left text-foreground [direction:rtl]">
+            <span dir="ltr" className="[unicode-bidi:isolate]">{recorder.liveText}</span>
+          </span>
+        ) : (
+          <span className="truncate text-foreground">{transcribing ? "Transcribiendo…" : "Escuchando…"}</span>
+        )}
         {!transcribing && <LevelBars analyser={recorder.analyser} />}
         <span className="shrink-0 text-sm tabular-nums text-muted-foreground">0:{String(recorder.seconds).padStart(2, "0")}</span>
       </div>

@@ -43,6 +43,7 @@
     "descripcion_voz": "Mujer mexicana de unos 35 años, de la Ciudad de México. Voz clara, cálida y pausada, con acento chilango neutro y natural. Tono de servidora pública amable y confiable, sin exagerar. Grabación limpia de estudio.",
     "modelo_tts": "eleven_flash_v2_5",
     "modelo_stt": "scribe_v2",
+    "modelo_stt_realtime": "scribe_v2_realtime",
     "idioma": "es",
     "terminos_clave": [
       "Llave CDMX",

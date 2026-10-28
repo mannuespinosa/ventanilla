@@ -4,8 +4,10 @@ import { Index } from "@/routes/index";
 import { Conversation } from "@/components/Conversation";
 import { ask } from "@/lib/ask";
 import { speak, stopSpeech, transcribe } from "@/lib/voice";
+import { startLiveTranscription } from "@/lib/live-transcription";
 
 vi.mock("@/lib/ask", () => ({ ask: vi.fn() }));
+vi.mock("@/lib/live-transcription", () => ({ startLiveTranscription: vi.fn() }));
 vi.mock("@/lib/voice", () => ({
   MAX_RECORDING_SECONDS: 30,
   recordingMimeType: () => "audio/webm;codecs=opus",
@@ -208,5 +210,73 @@ describe("voz", () => {
       />,
     );
     expect(screen.getAllByText(/Voz: ElevenLabs/)).toHaveLength(1);
+  });
+
+  describe("en vivo", () => {
+    class FakeAudioContext {
+      sampleRate = 48000;
+      resume() { return Promise.resolve(); }
+      close() { return Promise.resolve(); }
+      createAnalyser() { return { fftSize: 0, smoothingTimeConstant: 0, frequencyBinCount: 128, getByteFrequencyData: () => {} }; }
+      createMediaStreamSource() { return { connect: () => {} }; }
+    }
+
+    beforeEach(() => {
+      vi.stubGlobal("AudioContext", FakeAudioContext);
+      vi.stubGlobal("requestAnimationFrame", () => 0);
+      vi.stubGlobal("cancelAnimationFrame", () => {});
+    });
+
+    it("shows the live text while speaking and sends the committed text with ✓", async () => {
+      let show: (text: string) => void = () => {};
+      vi.mocked(startLiveTranscription).mockImplementation((_stream, _context, onText) => {
+        show = onText;
+        return { finish: vi.fn().mockResolvedValue("¿Cuánto cuesta la licencia?"), close: vi.fn() };
+      });
+      vi.mocked(ask).mockReturnValue(new Promise(() => {}));
+      render(<Index />);
+      await record();
+      await act(async () => show("¿Cuánto cuesta"));
+      expect(screen.getAllByText("¿Cuánto cuesta").length).toBeGreaterThan(0);
+      expect(screen.queryByText("Escuchando…")).not.toBeInTheDocument();
+      await act(async () => fireEvent.click(micButton("Enviar audio")));
+      expect(ask).toHaveBeenCalledWith("¿Cuánto cuesta la licencia?", []);
+      expect(transcribe).not.toHaveBeenCalled();
+    });
+
+    it("falls back silently to /voice/stt when the live session fails", async () => {
+      vi.mocked(startLiveTranscription).mockReturnValue({ finish: vi.fn().mockRejectedValue(new Error("ws")), close: vi.fn() });
+      vi.mocked(transcribe).mockResolvedValue("acta de nacimiento");
+      vi.mocked(ask).mockReturnValue(new Promise(() => {}));
+      render(<Index />);
+      await record();
+      await act(async () => fireEvent.click(micButton("Enviar audio")));
+      expect(transcribe).toHaveBeenCalledTimes(1);
+      expect(ask).toHaveBeenCalledWith("acta de nacimiento", []);
+      expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    });
+
+    it("falls back silently when the live session cannot start", async () => {
+      vi.mocked(startLiveTranscription).mockImplementation(() => { throw new Error("sin token"); });
+      vi.mocked(transcribe).mockResolvedValue("licencia");
+      vi.mocked(ask).mockReturnValue(new Promise(() => {}));
+      render(<Index />);
+      await record();
+      expect(screen.getAllByText("Escuchando…").length).toBeGreaterThan(0);
+      await act(async () => fireEvent.click(micButton("Enviar audio")));
+      expect(ask).toHaveBeenCalledWith("licencia", []);
+    });
+
+    it("closes the live session without sending when cancelled", async () => {
+      const close = vi.fn();
+      const finish = vi.fn();
+      vi.mocked(startLiveTranscription).mockReturnValue({ finish, close });
+      render(<Index />);
+      await record();
+      await act(async () => fireEvent.click(micButton("Cancelar grabación")));
+      expect(close).toHaveBeenCalled();
+      expect(finish).not.toHaveBeenCalled();
+      expect(ask).not.toHaveBeenCalled();
+    });
   });
 });
