@@ -7,6 +7,7 @@
 Uso:
   uv run scripts/ingest.py --discover   # busca URLs y escribe scripts/urls.json para revisarlo
   uv run scripts/ingest.py --ingest     # rastrea las URLs de urls.json, divide, genera embeddings y carga
+  uv run scripts/ingest.py --embed-missing  # genera embeddings de filas que se cargaron sin él
 
 Lee GEMINI_API_KEY, FIRECRAWL_API_KEY, SUPABASE_URL y SUPABASE_SERVICE_ROLE_KEY de .env.
 """
@@ -194,10 +195,14 @@ def embed(client: httpx.Client, rows: list[dict]) -> None:
             row["embedding"] = embedding["values"]
 
 
-def load(client: httpx.Client, url: str, rows: list[dict]) -> None:
-    base = env("SUPABASE_URL").rstrip("/")
+def supabase() -> tuple[str, dict]:
     key = env("SUPABASE_SERVICE_ROLE_KEY")
     headers = {"apikey": key, "Authorization": f"Bearer {key}", "Content-Type": "application/json"}
+    return env("SUPABASE_URL").rstrip("/"), headers
+
+
+def load(client: httpx.Client, url: str, rows: list[dict]) -> None:
+    base, headers = supabase()
     # Reemplaza los fragmentos previos de esta URL para que una página más corta no deje sobrantes.
     client.delete(f"{base}/rest/v1/docs", headers=headers, params={"url": f"eq.{url}"}).raise_for_status()
     response = client.post(f"{base}/rest/v1/docs", headers={**headers, "Prefer": "return=minimal"}, json=rows)
@@ -239,16 +244,48 @@ def ingest(client: httpx.Client) -> None:
     print(f"\nListo: {total} fragmentos cargados.")
 
 
+def embed_missing(client: httpx.Client) -> None:
+    """Genera embeddings para las filas que se cargaron sin él, sin volver a rastrear."""
+    base, headers = supabase()
+    response = client.get(
+        f"{base}/rest/v1/docs",
+        headers=headers,
+        params={"select": "id,titulo,contenido", "embedding": "is.null", "order": "id"},
+    )
+    response.raise_for_status()
+    rows = response.json()
+    print(f"{len(rows)} filas sin embedding")
+    embed(client, rows)
+    done = 0
+    for row in rows:
+        if "embedding" not in row:
+            continue
+        client.patch(
+            f"{base}/rest/v1/docs",
+            headers={**headers, "Prefer": "return=minimal"},
+            params={"id": f"eq.{row['id']}"},
+            json={"embedding": row["embedding"]},
+        ).raise_for_status()
+        done += 1
+    print(f"Listo: {done} embeddings generados.")
+
+
 def main() -> None:
     load_dotenv(ROOT / ".env")
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     mode = parser.add_mutually_exclusive_group(required=True)
     mode.add_argument("--discover", action="store_true", help="busca URLs y escribe scripts/urls.json")
     mode.add_argument("--ingest", action="store_true", help="rastrea urls.json y carga a docs")
+    mode.add_argument("--embed-missing", action="store_true", help="genera embeddings de filas que no tienen")
     args = parser.parse_args()
 
     with httpx.Client(timeout=60) as client:
-        discover(client) if args.discover else ingest(client)
+        if args.discover:
+            discover(client)
+        elif args.ingest:
+            ingest(client)
+        else:
+            embed_missing(client)
 
 
 if __name__ == "__main__":
