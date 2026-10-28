@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
-import { ArrowUp, Mic, Paperclip } from "lucide-react";
+import { ArrowRight, Mic, Paperclip } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export function AskInput({ onSubmit, disabled = false, tall = false, suggestion, onActivityChange, value: controlledValue, onValueChange }: {
@@ -52,7 +52,7 @@ export function AskInput({ onSubmit, disabled = false, tall = false, suggestion,
       {/* Móvil (<640px): rectángulo de dos renglones */}
       <form
         onSubmit={submit}
-        className="flex w-full flex-col gap-1 rounded-[24px] border border-border bg-input-bg p-2.5 focus-within:ring-1 focus-within:ring-ring sm:hidden"
+        className="flex w-full flex-col gap-1 rounded-[24px] border border-white/70 bg-input-bg p-2.5 focus-within:ring-1 focus-within:ring-ring sm:hidden"
       >
         <div className="relative min-w-0 px-1">
           <label htmlFor={`${inputId}-mobile`} className="sr-only">Escribe tu pregunta</label>
@@ -96,7 +96,7 @@ export function AskInput({ onSubmit, disabled = false, tall = false, suggestion,
             disabled={!canSend}
             className={sendClass}
           >
-            <ArrowUp size={18} />
+            <ArrowRight size={18} />
           </Button>
         </div>
       </form>
@@ -104,7 +104,7 @@ export function AskInput({ onSubmit, disabled = false, tall = false, suggestion,
       {/* Desktop (≥640px): píldora de un renglón */}
       <form
         onSubmit={submit}
-        className={`relative mx-auto hidden w-full max-w-[640px] items-center gap-1 rounded-full border border-border bg-input-bg py-2 pl-5 pr-2 focus-within:ring-1 focus-within:ring-ring sm:flex ${tall ? "lg:hidden" : ""}`}
+        className={`relative mx-auto hidden w-full max-w-[640px] items-center gap-1 rounded-full border border-white/70 bg-input-bg py-2 pl-5 pr-2 focus-within:ring-1 focus-within:ring-ring sm:flex ${tall ? "lg:hidden" : ""}`}
       >
         <div className="relative min-w-0 flex-1">
           <label htmlFor={`${inputId}-standard`} className="sr-only">Escribe tu pregunta</label>
@@ -139,7 +139,7 @@ export function AskInput({ onSubmit, disabled = false, tall = false, suggestion,
           disabled={!canSend}
           className={sendClass}
         >
-          <ArrowUp size={18} />
+          <ArrowRight size={18} />
         </Button>
       </form>
 
@@ -147,7 +147,7 @@ export function AskInput({ onSubmit, disabled = false, tall = false, suggestion,
       {tall && (
         <form
           onSubmit={submit}
-          className="relative mx-auto hidden w-full min-h-[88px] items-center gap-2 rounded-full border border-border bg-input-bg py-3 pl-6 pr-3 focus-within:ring-1 focus-within:ring-ring lg:flex"
+          className="relative mx-auto hidden w-full min-h-[88px] items-center gap-2 rounded-full border border-white/70 bg-input-bg py-3 pl-6 pr-3 focus-within:ring-1 focus-within:ring-ring lg:flex"
         >
           <div className="relative min-w-0 flex-1">
             <label htmlFor={`${inputId}-wide`} className="sr-only">Escribe tu pregunta</label>
@@ -182,7 +182,7 @@ export function AskInput({ onSubmit, disabled = false, tall = false, suggestion,
             disabled={!canSend}
             className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground transition hover:bg-primary/90 disabled:bg-primary/15 disabled:text-muted-foreground"
           >
-            <ArrowUp size={22} />
+            <ArrowRight size={22} />
           </Button>
         </form>
       )}
