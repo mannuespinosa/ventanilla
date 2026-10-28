@@ -2,11 +2,14 @@
 //   POST /voice/stt  multipart { audio }  → { text }
 //   POST /voice/tts  { text } (markdown de ask) → audio/mpeg
 // La versión hablada se arma de forma determinista: sin LLM.
+// Solo responde a los orígenes de `origenes_permitidos`; sin Origin (curl),
+// solo con el header X-Ventanilla-Dev igual al secreto VENTANILLA_DEV_TOKEN.
 
 import config from "../../../ventanilla.config.json" with { type: "json" };
 
 const ELEVEN = "https://api.elevenlabs.io/v1";
 const VOZ = config.voz;
+const ORIGENES = new Set(config.origenes_permitidos);
 const MAX_AUDIO_BYTES = 5 * 1024 * 1024;
 const MAX_TEXT = 10_000;
 const MAX_SPOKEN = 400;
@@ -30,6 +33,23 @@ function env(name: string): string {
   const value = Deno.env.get(name);
   if (!value) throw new Error(`Falta ${name}`);
   return value;
+}
+
+// Comparación en tiempo constante para no filtrar el token por latencia.
+function sameSecret(a: string, b: string): boolean {
+  const x = new TextEncoder().encode(a);
+  const y = new TextEncoder().encode(b);
+  let diff = x.length ^ y.length;
+  for (let i = 0; i < Math.max(x.length, y.length); i++) diff |= (x[i] ?? 0) ^ (y[i] ?? 0);
+  return diff === 0;
+}
+
+function allowed(req: Request): boolean {
+  const origin = req.headers.get("origin");
+  if (origin) return ORIGENES.has(origin);
+  const token = Deno.env.get("VENTANILLA_DEV_TOKEN");
+  const dev = req.headers.get("x-ventanilla-dev");
+  return !!token && !!dev && sameSecret(dev, token);
 }
 
 // ---------- Números a palabras (para montos en pesos) ----------
@@ -229,6 +249,7 @@ async function handleTts(req: Request): Promise<Response> {
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  if (!allowed(req)) return json({ error: "Origen no permitido" }, 403);
   if (req.method !== "POST") return json({ error: "Usa POST" }, 405);
 
   const path = new URL(req.url).pathname;

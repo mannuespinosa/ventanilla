@@ -10,6 +10,11 @@
   "dominios_permitidos": ["cdmx.gob.mx"],
   "fuentes": "scripts/urls.json",
   "repo": "https://github.com/mannuespinosa/ventanilla",
+  "origenes_permitidos": [
+    "http://localhost:8080",
+    "https://id-preview--1a2b4e9b-007d-47b1-959a-111e78e3dbdc.lovable.app",
+    "https://1a2b4e9b-007d-47b1-959a-111e78e3dbdc.lovableproject.com"
+  ],
   "voz": {
     "voice_id": "ezZ7i8g93r9WGEQx6Gjl",
     "voice_id_respaldo": "WcatwTHxqZ7CaKei5wyl",
