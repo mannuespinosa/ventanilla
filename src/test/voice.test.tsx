@@ -42,12 +42,19 @@ beforeEach(() => {
   getUserMedia.mockResolvedValue({ getTracks: () => [{ stop: vi.fn() }] });
   vi.mocked(speak).mockResolvedValue(true);
 });
-afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
+afterEach(() => { cleanup(); vi.unstubAllGlobals(); vi.useRealTimers(); });
 
 function micButton(name = "Usar micrófono") {
   const button = screen.getAllByRole("button", { name })[0];
   if (!button) throw new Error(`Falta el botón ${name}`);
   return button;
+}
+
+// Graba `ms` milisegundos (con un Date falso) y deja el composer en modo grabación.
+async function record(ms = 2000) {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  await act(async () => fireEvent.click(micButton()));
+  vi.setSystemTime(Date.now() + ms);
 }
 
 function send(question: string) {
@@ -65,9 +72,11 @@ describe("voz", () => {
     vi.mocked(ask).mockResolvedValue(ANSWER);
     render(<Index />);
 
-    await act(async () => fireEvent.click(micButton()));
-    expect(micButton("Detener grabación")).toHaveTextContent("0:00");
-    await act(async () => fireEvent.click(micButton("Detener grabación")));
+    await record();
+    expect(screen.getAllByText("Escuchando…").length).toBeGreaterThan(0);
+    expect(screen.queryByRole("button", { name: "Enviar pregunta" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Adjuntar archivo" })).not.toBeInTheDocument();
+    await act(async () => fireEvent.click(micButton("Enviar audio")));
 
     expect(transcribe).toHaveBeenCalledTimes(1);
     expect(ask).toHaveBeenCalledWith("¿Cuánto cuesta la licencia tipo A?", []);
@@ -89,8 +98,8 @@ describe("voz", () => {
     vi.mocked(transcribe).mockResolvedValue("¿Cómo tramito mi pasaporte?");
     vi.mocked(ask).mockResolvedValue({ answer: "No encontré esto en las fuentes oficiales que tengo.", sources: [], model: "gemma-4-26b-a4b-it" });
     render(<Index />);
-    await act(async () => fireEvent.click(micButton()));
-    await act(async () => fireEvent.click(micButton("Detener grabación")));
+    await record();
+    await act(async () => fireEvent.click(micButton("Enviar audio")));
     expect(speak).toHaveBeenCalledWith(expect.any(Number), "No encontré una fuente oficial para responder esto con seguridad. Prefiero no adivinar.");
     expect(screen.getByText("Respondido por Gemma 4 · modelo abierto · Voz: ElevenLabs")).toBeInTheDocument();
   });
@@ -101,6 +110,50 @@ describe("voz", () => {
     await act(async () => send("pasaporte"));
     expect(screen.getByText(/No encontré una fuente oficial/)).toBeInTheDocument();
     expect(speak).not.toHaveBeenCalled();
+  });
+
+  it("cancels with ✕ silently, without calling STT", async () => {
+    render(<Index />);
+    await record();
+    await act(async () => fireEvent.click(micButton("Cancelar grabación")));
+    expect(transcribe).not.toHaveBeenCalled();
+    expect(ask).not.toHaveBeenCalled();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(screen.queryByText("Escuchando…")).not.toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: "Usar micrófono" }).length).toBeGreaterThan(0);
+  });
+
+  it("cancels with Escape silently, without calling STT", async () => {
+    render(<Index />);
+    await record();
+    await act(async () => fireEvent.keyDown(document, { key: "Escape" }));
+    expect(transcribe).not.toHaveBeenCalled();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(screen.queryByText("Escuchando…")).not.toBeInTheDocument();
+  });
+
+  it("shows a spinner on ✓ while transcribing and sends without filling the input", async () => {
+    let finish: (text: string) => void = () => {};
+    vi.mocked(transcribe).mockReturnValue(new Promise((done) => { finish = done; }));
+    vi.mocked(ask).mockReturnValue(new Promise(() => {}));
+    render(<Index />);
+    await record();
+    await act(async () => fireEvent.click(micButton("Enviar audio")));
+    expect(micButton("Transcribiendo audio")).toBeDisabled();
+    await act(async () => finish("acta de nacimiento"));
+    expect(ask).toHaveBeenCalledWith("acta de nacimiento", []);
+    expect(screen.getByText("acta de nacimiento")).toBeInTheDocument();
+    expect(screen.getAllByLabelText("Escribe tu pregunta").every((input) => (input as HTMLInputElement).value === "")).toBe(true);
+  });
+
+  it("says it could not hear only for recordings under half a second, below the composer", async () => {
+    render(<Index />);
+    await record(200);
+    await act(async () => fireEvent.click(micButton("Enviar audio")));
+    expect(transcribe).not.toHaveBeenCalled();
+    const alert = screen.getByRole("alert");
+    expect(alert).toHaveTextContent("No alcancé a escucharte");
+    expect(alert.previousElementSibling?.tagName).toBe("FORM");
   });
 
   it("explains when microphone permission is denied", async () => {
@@ -116,8 +169,8 @@ describe("voz", () => {
     vi.mocked(ask).mockResolvedValue(ANSWER);
     vi.mocked(speak).mockRejectedValue(new Error("tts 502"));
     render(<Index />);
-    await act(async () => fireEvent.click(micButton()));
-    await act(async () => fireEvent.click(micButton("Detener grabación")));
+    await record();
+    await act(async () => fireEvent.click(micButton("Enviar audio")));
     expect(screen.getByText(/Cuesta \$1,142/)).toBeInTheDocument();
     expect(screen.getByText(/No pude leer la respuesta en voz alta/)).toBeInTheDocument();
     expect(screen.queryByText(/Voz: ElevenLabs/)).not.toBeInTheDocument();

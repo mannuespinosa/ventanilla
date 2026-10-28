@@ -48,6 +48,7 @@
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
+  --color-confirm: var(--confirm);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
@@ -85,6 +86,8 @@
   --accent-foreground: oklch(0.97 0.005 260);
   --destructive: oklch(0.65 0.2 25);
   --destructive-foreground: oklch(0.99 0 0);
+  /* Círculo azul de la palomita de voz (como el check de america.gov) */
+  --confirm: oklch(0.55 0.2 260);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 10%);
   --input-bg: oklch(0.14 0.018 260);
