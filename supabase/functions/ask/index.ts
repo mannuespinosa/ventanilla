@@ -4,7 +4,8 @@
 
 const GEMINI = "https://generativelanguage.googleapis.com/v1beta";
 const EMBED_MODEL = "gemini-embedding-2";
-const MODELS = ["gemma-4-31b-it", "gemma-4-26b-a4b-it"];
+// El primero es el principal (elegido con scripts/bench.py); el segundo, el respaldo.
+const MODELS = ["gemma-4-26b-a4b-it", "gemma-4-31b-it"];
 const MAX_QUESTION = 500;
 const NO_ANSWER = "No encontré esto en las fuentes oficiales que tengo.";
 
@@ -16,7 +17,8 @@ Reglas:
 3. Respuesta corta: de 2 a 5 oraciones o una lista breve. Español de México, tuteando, claro y amable.
 4. Cita cada dato con el número de su fragmento entre corchetes, por ejemplo [1] o [2][3]. No escribas URLs.
 5. Para COSTOS, la fuente prioritaria es data.finanzas.cdmx.gob.mx/formato_lc (es la que genera la línea de captura). Si otra fuente oficial da un monto distinto, dilo explícitamente, por ejemplo: "la ficha indica $X, pero el monto vigente para pago según Finanzas es $Y", y cita ambas.
-6. Si los fragmentos no contienen la respuesta a la pregunta, responde exactamente: NO_LO_SE`;
+6. Si el costo aparece en los fragmentos, inclúyelo siempre, aunque la pregunta no lo pida.
+7. Si los fragmentos no contienen la respuesta a la pregunta, responde exactamente: NO_LO_SE`;
 
 type Doc = {
   id: number;
@@ -98,11 +100,19 @@ async function generate(model: string, question: string, docs: Doc[]): Promise<s
   if (!response.ok) throw new Error(`${model} ${response.status} ${await response.text()}`);
   const data = await response.json();
   const parts: { text?: string; thought?: boolean }[] = data.candidates?.[0]?.content?.parts ?? [];
-  return parts
+  const text = parts
     .filter((part) => !part.thought && part.text)
     .map((part) => part.text)
     .join("")
     .trim();
+  // A veces Gemma 4 deja la etiqueta de canal "thought" pegada al inicio de la
+  // parte de respuesta (sin marcarla como thought). Ninguna respuesta en
+  // español empieza así, así que se quita.
+  if (/^thought/i.test(text)) {
+    console.warn(`${model} filtró la etiqueta "thought" en la respuesta`);
+    return text.replace(/^thought\s*/i, "");
+  }
+  return text;
 }
 
 // Convierte las citas [n] / [n, m] en fuentes, solo de los fragmentos citados,
