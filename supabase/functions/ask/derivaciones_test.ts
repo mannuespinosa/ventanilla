@@ -22,6 +22,10 @@ Deno.test("pasaporte → SRE, sin importar acentos ni mayúsculas", () => {
   );
   assertEquals(autoridad("¿DÓNDE SACO EL PASAPORTE?"), "Secretaría de Relaciones Exteriores (SRE)");
   assertEquals(buscarDerivacion("pasaporte", derivaciones)?.url, "https://www.gob.mx/pasaporte");
+  assertEquals(
+    autoridad("Pasaportes para toda la familia"),
+    "Secretaría de Relaciones Exteriores (SRE)",
+  );
 });
 
 Deno.test("CURP e INE coinciden por palabra y por frase completa", () => {
@@ -33,7 +37,7 @@ Deno.test("CURP e INE coinciden por palabra y por frase completa", () => {
 Deno.test("no coincide dentro de otras palabras", () => {
   assertEquals(autoridad("¿Cómo pago en línea?"), null);
   assertEquals(autoridad("constancia de inexistencia de registro"), null);
-  assertEquals(autoridad("pasaportes"), null);
+  assertEquals(autoridad("pasaportero"), null);
 });
 
 Deno.test("un tema sin derivación no se deriva", () => {

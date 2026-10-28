@@ -12,7 +12,7 @@
   "repo": "https://github.com/mannuespinosa/ventanilla",
   "derivaciones": [
     {
-      "temas": ["pasaporte"],
+      "temas": ["pasaporte", "pasaportes"],
       "autoridad": "Secretaría de Relaciones Exteriores (SRE)",
       "url": "https://www.gob.mx/pasaporte"
     },
