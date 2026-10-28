@@ -2,6 +2,9 @@
 // El modelo nunca escribe URLs: cita fragmentos [n] y aquí se convierten en
 // las ligas reales de la base. Sin cita o con NO_LO_SE, sources va vacío.
 
+import config from "../../../ventanilla.config.json" with { type: "json" };
+import { buscarDerivacion } from "./derivaciones.ts";
+
 const GEMINI = "https://generativelanguage.googleapis.com/v1beta";
 const EMBED_MODEL = "gemini-embedding-2";
 // El primero es el principal (elegido con scripts/bench.py); el segundo, el respaldo.
@@ -248,9 +251,19 @@ Deno.serve(async (req) => {
     const query = history.length > 0 ? await rewriteQuestion(question, history) : question;
     // Codificada porque un header no admite cualquier carácter Unicode.
     const queryHeader = { "x-ventanilla-query": encodeURIComponent(query) };
+    // Solo para respuestas sin fuente: si el tema es de otra autoridad, se dice
+    // a cuál y se da su liga curada. Una respuesta con fuentes nunca se toca.
+    const sinFuente = (headers: Record<string, string>) => {
+      const derivacion = buscarDerivacion(query, config.derivaciones);
+      return json(
+        { answer: NO_ANSWER, sources: [], ...(derivacion && { derivacion }) },
+        200,
+        headers,
+      );
+    };
 
     const docs = await search(query, await embedQuestion(query));
-    if (docs.length === 0) return json({ answer: NO_ANSWER, sources: [] }, 200, queryHeader);
+    if (docs.length === 0) return sinFuente(queryHeader);
 
     let text = "";
     let used = "";
@@ -267,7 +280,7 @@ Deno.serve(async (req) => {
 
     const headers = { ...queryHeader, "x-ventanilla-model": used };
     const sources = text.includes("NO_LO_SE") ? [] : citedSources(text, docs);
-    if (sources.length === 0) return json({ answer: NO_ANSWER, sources: [] }, 200, headers);
+    if (sources.length === 0) return sinFuente(headers);
     return json({ answer: stripCitations(text), sources }, 200, headers);
   } catch (error) {
     console.error(error);

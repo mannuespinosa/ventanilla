@@ -10,6 +10,23 @@
   "dominios_permitidos": ["cdmx.gob.mx"],
   "fuentes": "scripts/urls.json",
   "repo": "https://github.com/mannuespinosa/ventanilla",
+  "derivaciones": [
+    {
+      "temas": ["pasaporte"],
+      "autoridad": "Secretaría de Relaciones Exteriores (SRE)",
+      "url": "https://www.gob.mx/pasaporte"
+    },
+    {
+      "temas": ["curp"],
+      "autoridad": "Registro Nacional de Población (RENAPO)",
+      "url": "https://www.gob.mx/curp/"
+    },
+    {
+      "temas": ["ine", "credencial para votar", "credencial de elector"],
+      "autoridad": "Instituto Nacional Electoral (INE)",
+      "url": "https://www.ine.mx/credencial/"
+    }
+  ],
   "endpoints": {
     "ask": "https://ngwzqmvqfchqiogxjzki.supabase.co/functions/v1/ask",
     "voice": "https://ngwzqmvqfchqiogxjzki.supabase.co/functions/v1/voice"
