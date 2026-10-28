@@ -8,4 +8,4 @@
 - [x] Sync input placeholder with current slide; empty submit sends slide question.
 - [x] Add "domicilio" to ask() mock with test.
 - [x] Remove blue: neutral borders, white send button, white/30 focus ring.
-- [ ] Verify carousel, pause on focus, empty submit, and palette in browser.
+- [x] Verify carousel, pause on focus, empty submit, and palette in browser.
