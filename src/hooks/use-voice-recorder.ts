@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { MAX_RECORDING_SECONDS, recordingMimeType, stopSpeech, transcribe, unlockAudio } from "@/lib/voice";
+import { startLiveTranscription, type LiveTranscription } from "@/lib/live-transcription";
 
 export type RecorderStatus = "idle" | "recording" | "transcribing";
 
@@ -11,18 +12,22 @@ type Session = {
   recorder: MediaRecorder;
   stream: MediaStream;
   context: AudioContext | null;
+  // Transcripción en vivo; si falla o no hay, se usa el audio grabado con /voice/stt.
+  live: LiveTranscription | null;
   startedAt: number;
   // "send": ✓ (o el corte de 30 s) transcribe y envía; "discard": ✕ o Escape.
   outcome: "send" | "discard";
 };
 
-// start() empieza a grabar; confirm() detiene, transcribe y manda el texto a onText;
+// start() empieza a grabar (y a transcribir en vivo en `liveText`); confirm() detiene,
+// toma el texto final (en vivo o, si falló, de /voice/stt) y lo manda a onText;
 // cancel() descarta el audio en silencio.
 export function useVoiceRecorder(onText: (text: string) => void) {
   const [status, setStatus] = useState<RecorderStatus>("idle");
   const [seconds, setSeconds] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [analyser, setAnalyser] = useState<AnalyserNode | null>(null);
+  const [liveText, setLiveText] = useState("");
   const sessionRef = useRef<Session | null>(null);
   const timersRef = useRef<{ tick?: number; limit?: number }>({});
   const startingRef = useRef(false);
@@ -47,6 +52,7 @@ export function useVoiceRecorder(onText: (text: string) => void) {
     generationRef.current += 1;
     finish("discard");
     setStatus("idle");
+    setLiveText("");
   }, [finish]);
 
   useEffect(() => () => {
@@ -78,6 +84,7 @@ export function useVoiceRecorder(onText: (text: string) => void) {
     }
     // También dentro del clic, para que Safari permita el AudioContext.
     const context = typeof AudioContext === "undefined" ? null : new AudioContext();
+    void context?.resume();
     const generation = generationRef.current;
 
     let stream: MediaStream;
@@ -108,41 +115,75 @@ export function useVoiceRecorder(onText: (text: string) => void) {
       context.createMediaStreamSource(stream).connect(node);
     }
 
+    let live: LiveTranscription | null = null;
+    if (context) {
+      try {
+        live = startLiveTranscription(stream, context, (text) => {
+          if (generationRef.current === generation) setLiveText(text);
+        });
+      } catch (cause) {
+        console.warn("Sin transcripción en vivo; se usará /voice/stt", cause);
+      }
+    }
+
     const recorder = new MediaRecorder(stream, { mimeType });
-    const session: Session = { recorder, stream, context, startedAt: Date.now(), outcome: "send" };
+    const session: Session = { recorder, stream, context, live, startedAt: Date.now(), outcome: "send" };
     const chunks: Blob[] = [];
     recorder.addEventListener("dataavailable", (event) => {
       if (event.data.size > 0) chunks.push(event.data);
     });
     recorder.addEventListener("stop", async () => {
       stream.getTracks().forEach((track) => track.stop());
-      void context?.close();
       if (sessionRef.current === session) sessionRef.current = null;
       setAnalyser(null);
-      if (session.outcome === "discard" || generationRef.current !== generation) return;
+      const release = () => {
+        live?.close();
+        void context?.close();
+      };
+      if (session.outcome === "discard" || generationRef.current !== generation) {
+        release();
+        return;
+      }
 
       const audio = new Blob(chunks, { type: recorder.mimeType || mimeType });
       if (Date.now() - session.startedAt < MIN_RECORDING_MS || audio.size === 0) {
+        release();
+        setLiveText("");
         setError(TOO_SHORT);
         setStatus("idle");
         return;
       }
       setStatus("transcribing");
       try {
-        const text = await transcribe(audio);
+        let text = "";
+        if (live) {
+          try {
+            text = await live.finish();
+          } catch (cause) {
+            // Respaldo silencioso: el audio grabado va a /voice/stt.
+            console.warn("Transcripción en vivo falló; se usará /voice/stt", cause);
+          }
+        }
+        release();
+        if (generationRef.current !== generation) return;
+        if (!text) text = await transcribe(audio);
         if (generationRef.current !== generation) return;
         if (text) onTextRef.current(text);
         else setError(TOO_SHORT);
       } catch {
         if (generationRef.current === generation) setError("No pude transcribir el audio. Intenta de nuevo o escribe tu pregunta.");
       } finally {
-        if (generationRef.current === generation) setStatus("idle");
+        if (generationRef.current === generation) {
+          setStatus("idle");
+          setLiveText("");
+        }
       }
     });
 
     sessionRef.current = session;
     recorder.start();
     setAnalyser(node);
+    setLiveText("");
     setSeconds(0);
     setStatus("recording");
     timersRef.current = {
@@ -153,5 +194,5 @@ export function useVoiceRecorder(onText: (text: string) => void) {
     };
   }, [confirm]);
 
-  return { status, seconds, error, analyser, start, confirm, cancel };
+  return { status, seconds, error, analyser, liveText, start, confirm, cancel };
 }

@@ -1,6 +1,7 @@
 // Edge function `voice`: voz con ElevenLabs, sin tocar el RAG de `ask`.
 //   POST /voice/stt  multipart { audio }  → { text }
 //   POST /voice/tts  { text } (markdown de ask) → audio/mpeg
+//   POST /voice/token → { token } de un solo uso para Scribe Realtime en el navegador
 // La versión hablada se arma de forma determinista: sin LLM.
 // Solo responde a los orígenes de `origenes_permitidos`; sin Origin (curl),
 // solo con el header X-Ventanilla-Dev igual al secreto VENTANILLA_DEV_TOKEN.
@@ -222,6 +223,23 @@ async function handleStt(req: Request): Promise<Response> {
   }
 }
 
+// La llave se queda aquí: el navegador solo recibe un token que caduca en 15 min.
+async function handleToken(): Promise<Response> {
+  try {
+    const response = await fetch(`${ELEVEN}/single-use-token/realtime_scribe`, {
+      method: "POST",
+      headers: { "xi-api-key": env("ELEVENLABS_API_KEY") },
+    });
+    if (!response.ok) throw new Error(`token ${response.status} ${await response.text()}`);
+    const { token } = await response.json();
+    if (typeof token !== "string") throw new Error("token con forma inválida");
+    return json({ token });
+  } catch (error) {
+    console.error(error);
+    return json({ error: "No se pudo iniciar la transcripción en vivo" }, 502);
+  }
+}
+
 async function handleTts(req: Request): Promise<Response> {
   let body: { text?: unknown };
   try {
@@ -255,5 +273,6 @@ Deno.serve(async (req) => {
   const path = new URL(req.url).pathname;
   if (path.endsWith("/stt")) return await handleStt(req);
   if (path.endsWith("/tts")) return await handleTts(req);
-  return json({ error: "Ruta no encontrada: usa /voice/stt o /voice/tts" }, 404);
+  if (path.endsWith("/token")) return await handleToken();
+  return json({ error: "Ruta no encontrada: usa /voice/stt, /voice/tts o /voice/token" }, 404);
 });
