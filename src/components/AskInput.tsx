@@ -9,7 +9,11 @@ const PROMPTS = [
   "Prueba: ¿dónde tramito mi constancia de domicilio?",
 ];
 
-export function AskInput({ onSubmit, disabled = false }: { onSubmit: (question: string) => void; disabled?: boolean }) {
+export function AskInput({ onSubmit, disabled = false, tall = false }: {
+  onSubmit: (question: string) => void;
+  disabled?: boolean;
+  tall?: boolean;
+}) {
   const [value, setValue] = useState("");
   const [idx, setIdx] = useState(0);
   const [visible, setVisible] = useState(true);
@@ -100,7 +104,7 @@ export function AskInput({ onSubmit, disabled = false }: { onSubmit: (question: 
       {/* Desktop (≥640px): píldora de un renglón */}
       <form
         onSubmit={submit}
-        className="ask-glow relative mx-auto hidden w-full max-w-[640px] items-center gap-1 rounded-full border border-border bg-input-bg py-2 pl-5 pr-2 sm:flex"
+        className={`ask-glow relative mx-auto hidden w-full max-w-[640px] items-center gap-1 rounded-full border border-border bg-input-bg py-2 pl-5 pr-2 sm:flex ${tall ? "lg:hidden" : ""}`}
       >
         <div className="relative min-w-0 flex-1">
           <label htmlFor="ask" className="sr-only">Escribe tu pregunta</label>
@@ -136,6 +140,48 @@ export function AskInput({ onSubmit, disabled = false }: { onSubmit: (question: 
           <ArrowUp size={18} />
         </Button>
       </form>
+
+      {/* Desktop grande (≥1024px) dentro de la foto: píldora alta */}
+      {tall && (
+        <form
+          onSubmit={submit}
+          className="ask-glow relative mx-auto hidden w-full min-h-[88px] items-center gap-2 rounded-full border border-border bg-input-bg py-3 pl-6 pr-3 lg:flex"
+        >
+          <div className="relative min-w-0 flex-1">
+            <label htmlFor="ask-wide" className="sr-only">Escribe tu pregunta</label>
+            <input
+              id="ask-wide"
+              disabled={disabled}
+              value={value}
+              onChange={(e) => setValue(e.target.value)}
+              className="w-full bg-transparent py-2 text-xl text-foreground outline-none"
+              autoComplete="off"
+            />
+            {!value && (
+              <span
+                aria-hidden
+                className={`pointer-events-none absolute inset-y-0 left-0 right-0 flex items-center truncate text-xl text-muted-foreground transition-opacity duration-300 ${visible ? "opacity-100" : "opacity-0"}`}
+              >
+                {PROMPTS[idx]}
+              </span>
+            )}
+          </div>
+          <Button variant="ghost" size="icon" disabled={disabled} type="button" aria-label="Adjuntar archivo" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full p-0 text-muted-foreground hover:text-foreground">
+            <Paperclip size={22} />
+          </Button>
+          <Button variant="ghost" size="icon" disabled={disabled} type="button" aria-label="Usar micrófono" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full p-0 text-muted-foreground hover:text-foreground">
+            <Mic size={22} />
+          </Button>
+          <Button
+            type="submit"
+            aria-label="Enviar pregunta"
+            disabled={!trimmed || disabled}
+            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground transition hover:brightness-110 disabled:opacity-40"
+          >
+            <ArrowUp size={22} />
+          </Button>
+        </form>
+      )}
     </>
   );
 }
