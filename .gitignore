@@ -39,3 +39,6 @@ dist-ssr
 # Ingest cache
 scripts/.cache/
 __pycache__/
+
+__pycache__/
+*.pyc

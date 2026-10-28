@@ -1,0 +1,138 @@
+{
+  "licencia_a": [
+    {
+      "url": "https://www.cdmx.gob.mx/public/InformacionTramite.xhtml?idTramite=2500",
+      "dominio": "www.cdmx.gob.mx",
+      "titulo": "Renovación de licencia para conducir automóvil (Tipo A) - CDMX",
+      "origen": "search"
+    },
+    {
+      "url": "https://licencias.cdmx.gob.mx/",
+      "dominio": "licencias.cdmx.gob.mx",
+      "titulo": "Licencias CDMX",
+      "origen": "search"
+    },
+    {
+      "url": "https://data.finanzas.cdmx.gob.mx/formato_lc/conceptos/licencias",
+      "dominio": "data.finanzas.cdmx.gob.mx",
+      "titulo": "Licencias - Ciudad de México - Finanzas CDMX",
+      "origen": "search"
+    },
+    {
+      "url": "https://www.cdmx.gob.mx/public/InformacionTramite.xhtml?faces-redirect=true&idTramite=2699",
+      "dominio": "www.cdmx.gob.mx",
+      "titulo": "Expedición, Renovación y Reposición de Licencia para conducir Tipo A ...",
+      "origen": "search"
+    }
+  ],
+  "verificacion": [
+    {
+      "url": "https://sedema.cdmx.gob.mx/programas/programa/verificacion-vehicular",
+      "dominio": "sedema.cdmx.gob.mx",
+      "titulo": "Verificación Vehicular - Sedema - CDMX",
+      "origen": "search"
+    },
+    {
+      "url": "https://www.cdmx.gob.mx/public/InformacionTramite.xhtml?idTramite=99",
+      "dominio": "www.cdmx.gob.mx",
+      "titulo": "Verificación vehicular - CDMX",
+      "origen": "search"
+    }
+  ],
+  "predial": [
+    {
+      "url": "https://ovica.finanzas.cdmx.gob.mx/adeudos",
+      "dominio": "ovica.finanzas.cdmx.gob.mx",
+      "titulo": "Impuesto Predial - Ciudad de México - Oficina Virtual del Catastro - CDMX",
+      "origen": "search"
+    },
+    {
+      "url": "https://ovica.finanzas.cdmx.gob.mx/",
+      "dominio": "ovica.finanzas.cdmx.gob.mx",
+      "titulo": "Oficina Virtual del Catastro - Ciudad de México",
+      "origen": "search"
+    }
+  ],
+  "tenencia": [
+    {
+      "url": "https://dgtc.finanzas.cdmx.gob.mx/servicios/servicios-de-control-vehicular",
+      "dominio": "dgtc.finanzas.cdmx.gob.mx",
+      "titulo": "Servicios de control vehicular 2026 - Finanzas CDMX",
+      "origen": "search"
+    }
+  ],
+  "acta_nacimiento": [
+    {
+      "url": "https://actas.cdmx.gob.mx/",
+      "dominio": "actas.cdmx.gob.mx",
+      "titulo": "Expedición de copias certificadas de actas del estado civil de las personas",
+      "origen": "search"
+    },
+    {
+      "url": "https://registrocivil.cdmx.gob.mx/",
+      "dominio": "registrocivil.cdmx.gob.mx",
+      "titulo": "Portal de Trámites y Servicios Del Registro Civil de la CDMX",
+      "origen": "search"
+    },
+    {
+      "url": "https://data.finanzas.cdmx.gob.mx/formato_lc/conceptos/registro_civil",
+      "dominio": "data.finanzas.cdmx.gob.mx",
+      "titulo": "Registro Civil - Ciudad de México - Finanzas CDMX",
+      "origen": "search"
+    }
+  ],
+  "llave_cdmx": [
+    {
+      "url": "https://llave.cdmx.gob.mx/",
+      "dominio": "llave.cdmx.gob.mx",
+      "titulo": "Llave CDMX",
+      "origen": "search"
+    },
+    {
+      "url": "https://llave.cdmx.gob.mx/RegistroCiudadano.xhtml",
+      "dominio": "llave.cdmx.gob.mx",
+      "titulo": "Registro Ciudadano Llave CDMX",
+      "origen": "search"
+    },
+    {
+      "url": "https://declara.cdmx.gob.mx/static/src/doc/guia_llave_cdmx.pdf",
+      "dominio": "declara.cdmx.gob.mx",
+      "titulo": "[PDF] guía para resolver problemas frecuentes en el sistema llave cdmx",
+      "origen": "search"
+    }
+  ],
+  "tarjeta_circulacion": [
+    {
+      "url": "https://tramites.cdmx.gob.mx/tarjeta-circulacion/public/",
+      "dominio": "tramites.cdmx.gob.mx",
+      "titulo": "Refrendo de Tarjeta de Circulación | Ciudad de México - CDMX",
+      "origen": "search"
+    },
+    {
+      "url": "https://www.semovi.cdmx.gob.mx/tramites-y-servicios/vehiculos-particulares/automovil/control-vehicular-y-tarjeta-de-circulacion",
+      "dominio": "www.semovi.cdmx.gob.mx",
+      "titulo": "Control vehícular y tarjeta de circulación - Semovi - CDMX",
+      "origen": "search"
+    },
+    {
+      "url": "https://data.finanzas.cdmx.gob.mx/formato_lc/vehicular/36_15",
+      "dominio": "data.finanzas.cdmx.gob.mx",
+      "titulo": "Secretaría de Administración y Finanzas de la Ciudad de México",
+      "origen": "search"
+    },
+    {
+      "url": "https://www.cdmx.gob.mx/public/InformacionTramite.xhtml?idTramite=223",
+      "dominio": "www.cdmx.gob.mx",
+      "titulo": "Refrendo de Tarjeta de Circulación para Vehículos, Motocicletas y ...",
+      "origen": "search"
+    }
+  ],
+  "no_antecedentes": [
+    {
+      "url": "https://noantecedentes.cdmx.gob.mx/",
+      "dominio": "noantecedentes.cdmx.gob.mx",
+      "titulo": "Constancia Digital de No Antecedentes Penales",
+      "origen": "search"
+    }
+  ]
+}
