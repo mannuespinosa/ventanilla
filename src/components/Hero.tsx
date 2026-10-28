@@ -52,7 +52,7 @@ export function Hero({ onSubmit }: { onSubmit: (question: string) => void }) {
           ))}
           <div className="absolute inset-x-0 top-0 h-44 bg-gradient-to-b from-overlay to-transparent lg:h-56" />
           <div className="relative flex justify-center px-3 pt-6 md:px-8 md:pt-10 lg:px-4 lg:pt-4">
-            <AskInput onSubmit={onSubmit} tall suggestion={SLIDES[index].question} onActivityChange={setInputActive} />
+            <AskInput onSubmit={onSubmit} tall suggestion={SLIDES[index]?.question} onActivityChange={setInputActive} />
           </div>
         </div>
         <div className="flex items-center justify-center gap-2 pt-4">
