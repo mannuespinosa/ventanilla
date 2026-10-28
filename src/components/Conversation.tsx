@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { Link as LinkIcon } from "lucide-react";
 import { AskInput } from "./AskInput";
+import { AnswerMarkdown } from "./AnswerMarkdown";
 import type { AskResponse } from "@/lib/ask";
 
 export type ConversationTurn = { id: number; question: string; response?: AskResponse };
@@ -46,7 +47,7 @@ export function Conversation({ turns, pending, onSubmit }: {
                 </div>
               ) : (
                 <div>
-                  <p className="whitespace-pre-wrap break-words font-sans text-base leading-7 text-foreground sm:text-[17px]">{turn.response.answer}</p>
+                  <AnswerMarkdown>{turn.response.answer}</AnswerMarkdown>
                   <p className="mb-2 mt-5 text-xs text-muted-foreground">Fuentes</p>
                   <div className="flex flex-wrap gap-2">
                     {turn.response.sources.map((source, i) => (

@@ -52,6 +52,36 @@ describe("conversation rules", () => {
     expect(label).toHaveAttribute("title", "gemma-4-26b-a4b-it");
   });
 
+  it("renders the answer's Markdown without raw HTML or images", () => {
+    const answer = [
+      "Necesitas:",
+      "",
+      "* **Identificación oficial**",
+      "* Tarjeta de circulación",
+      "",
+      '<b class="raw">HTML_CRUDO</b> <img src="https://x.test/p.png" onerror="alert(1)">',
+      "",
+      "![pixel](https://x.test/pixel.png)",
+    ].join("\n");
+    const response = {
+      answer,
+      sources: [{ titulo: "Fuente", url: "https://tramites.cdmx.gob.mx" }],
+    };
+    render(
+      <Conversation
+        turns={[{ id: 1, question: "Pregunta", response }]}
+        pending={false}
+        onSubmit={vi.fn()}
+      />,
+    );
+    const log = screen.getByRole("log");
+    expect(screen.getByText("Identificación oficial").tagName).toBe("STRONG");
+    expect(log.querySelectorAll("ul > li")).toHaveLength(2);
+    expect(log.textContent).not.toContain("**");
+    expect(log.querySelector("b.raw")).toBeNull();
+    expect(log.querySelector("img")).toBeNull();
+  });
+
   it("blocks new questions while a response is pending", async () => {
     const response = deferred();
     vi.mocked(ask).mockReturnValue(response.promise);
